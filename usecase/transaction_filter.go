@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"sort"
 	"strings"
 	"tx-aggregator/model"
 )
@@ -28,4 +29,27 @@ func LimitTransactions(resp *model.TransactionResponse, max int) *model.Transact
 		resp.Result.Transactions = txs[:max]
 	}
 	return resp
+}
+
+// SortTransactionResponseByHeightAndHash sorts the transactions inside TransactionResponse.
+// It first sorts by height (ascending or descending), then by hash in lexicographical order.
+func SortTransactionResponseByHeightAndHash(resp *model.TransactionResponse, ascending bool) {
+	if resp == nil || len(resp.Result.Transactions) == 0 {
+		return
+	}
+
+	sort.Slice(resp.Result.Transactions, func(i, j int) bool {
+		txI := resp.Result.Transactions[i]
+		txJ := resp.Result.Transactions[j]
+
+		if txI.Height == txJ.Height {
+			// If height is equal, compare hash lexicographically
+			return txI.Hash < txJ.Hash
+		}
+
+		if ascending {
+			return txI.Height < txJ.Height
+		}
+		return txI.Height > txJ.Height
+	})
 }

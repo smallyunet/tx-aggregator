@@ -13,7 +13,7 @@ import (
 // ParseTxAndSaveToCache processes transaction response and saves it to Redis cache
 // It groups transactions by chainId and tokenAddress, then stores them in appropriate cache keys
 // Returns error if any cache operation fails
-func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse) error {
+func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse, address string) error {
 	if resp == nil || len(resp.Result.Transactions) == 0 {
 		log.Println("No transactions to process in response")
 		return nil
@@ -33,7 +33,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse) erro
 
 		// If token transaction, append to chainId-tokenAddress group
 		if tx.CoinType == 2 && tx.TokenAddress != "" {
-			key := formatTokenKey(tx.ChainID, tx.TokenAddress)
+			key := formatTokenKey(address, tx.ChainID, tx.TokenAddress)
 			tokenTxMap[key] = append(tokenTxMap[key], tx)
 
 			// Track token set for the chain
@@ -49,7 +49,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse) erro
 
 	// Save chain-level transactions
 	for chainID, txs := range chainTxMap {
-		key := formatChainKey(chainID)
+		key := formatChainKey(address, chainID)
 		log.Printf("Caching %d transactions for chain %d", len(txs), chainID)
 		if err := r.Set(key, txs, ttlSeconds); err != nil {
 			log.Printf("Failed to cache transactions for chain %d: %v", chainID, err)
@@ -68,7 +68,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse) erro
 
 	// Save token sets for each chainId
 	for chainID, tokens := range tokenSetMap {
-		setKey := formatTokenSetKey(chainID)
+		setKey := formatTokenSetKey(address, chainID)
 		log.Printf("Caching %d tokens for chain %d", len(tokens), chainID)
 		for token := range tokens {
 			if err := r.AddToSet(setKey, token, ttlSeconds); err != nil {
@@ -91,6 +91,7 @@ func (r *RedisCache) QueryTxFromCache(req *types.TransactionQueryParams) (*model
 	logger.Log.Debug().
 		Ints64("chainIDs", req.ChainIDs).
 		Str("tokenAddress", req.TokenAddress).
+		Str("address", req.Address).
 		Msg("Querying cache")
 
 	if len(req.ChainIDs) == 0 {
@@ -102,15 +103,16 @@ func (r *RedisCache) QueryTxFromCache(req *types.TransactionQueryParams) (*model
 		var key string
 		if req.TokenAddress == "" {
 			// Query by chainId only
-			key = formatChainKey(chainID)
+			key = formatChainKey(req.Address, chainID)
 		} else {
 			// Query by chainId-tokenAddress combination
-			key = formatTokenKey(chainID, req.TokenAddress)
+			key = formatTokenKey(req.Address, chainID, req.TokenAddress)
 		}
 
 		val, err := r.Get(key)
 		if err != nil {
 			logger.Log.Debug().
+				Str("address", req.Address).
 				Int64("chainID", chainID).
 				Str("key", key).
 				Err(err).
@@ -121,6 +123,7 @@ func (r *RedisCache) QueryTxFromCache(req *types.TransactionQueryParams) (*model
 		var txs []model.Transaction
 		if err := json.Unmarshal([]byte(val), &txs); err != nil {
 			logger.Log.Warn().
+				Str("address", req.Address).
 				Int64("chainID", chainID).
 				Str("key", key).
 				Err(err).
@@ -129,6 +132,7 @@ func (r *RedisCache) QueryTxFromCache(req *types.TransactionQueryParams) (*model
 		}
 
 		logger.Log.Debug().
+			Str("address", req.Address).
 			Int64("chainID", chainID).
 			Str("key", key).
 			Int("txCount", len(txs)).
