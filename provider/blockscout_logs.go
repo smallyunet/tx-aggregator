@@ -11,11 +11,11 @@ import (
 	"tx-aggregator/model"
 )
 
-// fetchBlockscoutLogs retrieves logs from Tantin:
+// fetchBlockscoutLogs retrieves logs from Blockscout:
 // GET /addresses/{address}/logs
 func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.BlockscoutLogResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/logs", t.baseURL, address)
-	logger.Log.Debug().Str("url", url).Msg("Fetching logs from Tantin")
+	logger.Log.Debug().Str("url", url).Msg("Fetching logs from Blockscout")
 
 	resp, err := http.Get(url)
 	if err != nil {

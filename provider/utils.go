@@ -96,7 +96,7 @@ func parseBlockscoutTimestampToUnix(ts string) int64 {
 		logger.Log.Warn().
 			Err(err).
 			Str("timestamp", ts).
-			Msg("Failed to parse Tantin timestamp, returning 0")
+			Msg("Failed to parse Blockscout timestamp, returning 0")
 		return 0
 	}
 	return parsed.Unix()

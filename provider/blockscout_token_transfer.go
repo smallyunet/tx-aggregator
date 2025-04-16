@@ -10,11 +10,11 @@ import (
 	"tx-aggregator/model"
 )
 
-// fetchTantinTokenTransfers retrieves token transfers from Tantin:
+// fetchBlockscoutTokenTransfers retrieves token transfers from Blockscout:
 // GET /addresses/{address}/token-transfers
-func (t *BlockscoutProvider) fetchTantinTokenTransfers(address string) (*model.BlockscoutTokenTransferResponse, error) {
+func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*model.BlockscoutTokenTransferResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/token-transfers", t.baseURL, address)
-	logger.Log.Debug().Str("url", url).Msg("Fetching token transfers from Tantin")
+	logger.Log.Debug().Str("url", url).Msg("Fetching token transfers from Blockscout")
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -39,10 +39,10 @@ func (t *BlockscoutProvider) fetchTantinTokenTransfers(address string) (*model.B
 	return &result, nil
 }
 
-// transformBlockscoutTokenTransfers converts Tantin token transfers into []model.Transaction
+// transformBlockscoutTokenTransfers converts Blockscout token transfers into []model.Transaction
 func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(resp *model.BlockscoutTokenTransferResponse, address string) []model.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
-		logger.Log.Warn().Msg("No token transfers to transform from Tantin")
+		logger.Log.Warn().Msg("No token transfers to transform from Blockscout")
 		return nil
 	}
 
@@ -89,6 +89,6 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(resp *model.Block
 
 	logger.Log.Debug().
 		Int("transformed_count", len(transactions)).
-		Msg("Transformed token transfers from Tantin")
+		Msg("Transformed token transfers from Blockscout")
 	return transactions
 }

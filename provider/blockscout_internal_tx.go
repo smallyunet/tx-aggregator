@@ -10,11 +10,11 @@ import (
 	"tx-aggregator/model"
 )
 
-// fetchBlockscoutInternalTx retrieves internal transactions from Tantin:
+// fetchBlockscoutInternalTx retrieves internal transactions from Blockscout:
 // GET /addresses/{address}/internal-transactions
 func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.BlockscoutInternalTxResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/internal-transactions", t.baseURL, address)
-	logger.Log.Debug().Str("url", url).Msg("Fetching internal transactions from Tantin")
+	logger.Log.Debug().Str("url", url).Msg("Fetching internal transactions from Blockscout")
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -43,7 +43,7 @@ func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.B
 // If you only want to store minimal details, this is an example approach.
 func (t *BlockscoutProvider) transformBlockscoutInternalTx(resp *model.BlockscoutInternalTxResponse, address string) []model.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
-		logger.Log.Warn().Msg("No internal transactions to transform from Tantin")
+		logger.Log.Warn().Msg("No internal transactions to transform from Blockscout")
 		return nil
 	}
 
@@ -79,7 +79,7 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(resp *model.Blockscou
 			State:            state,
 			Height:           itx.BlockNumber,
 			Hash:             itx.TransactionHash, // internal tx uses outer transaction's hash
-			BlockHash:        "",                  // not provided by Tantin for internal
+			BlockHash:        "",                  // not provided by Blockscout for internal
 			FromAddress:      fromHash,
 			ToAddress:        toHash,
 			TokenAddress:     "",

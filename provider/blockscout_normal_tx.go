@@ -11,11 +11,11 @@ import (
 	"tx-aggregator/model"
 )
 
-// fetchBlockscoutNormalTx retrieves normal transactions from the Tantin endpoint:
+// fetchBlockscoutNormalTx retrieves normal transactions from the Blockscout endpoint:
 // GET /addresses/{address}/transactions
 func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.BlockscoutTransactionResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/transactions", t.baseURL, address)
-	logger.Log.Debug().Str("url", url).Msg("Fetching normal transactions from Tantin")
+	logger.Log.Debug().Str("url", url).Msg("Fetching normal transactions from Blockscout")
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -40,7 +40,7 @@ func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.Blo
 	return &result, nil
 }
 
-// transformBlockscoutNormalTx is the initial conversion of Tantin normal transactions response to []model.Transaction.
+// transformBlockscoutNormalTx is the initial conversion of Blockscout normal transactions response to []model.Transaction.
 // Here we do NOT yet handle "approve" detection. We simply store the base transaction data.
 func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 	resp *model.BlockscoutTransactionResponse,
@@ -49,7 +49,7 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 ) []model.Transaction {
 
 	if resp == nil || len(resp.Items) == 0 {
-		logger.Log.Warn().Msg("No normal transactions to transform from Tantin")
+		logger.Log.Warn().Msg("No normal transactions to transform from Blockscout")
 		return nil
 	}
 
