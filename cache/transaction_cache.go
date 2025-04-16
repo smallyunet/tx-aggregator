@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 	"tx-aggregator/config"
+	"tx-aggregator/logger"
 	"tx-aggregator/model"
 	"tx-aggregator/types"
 )
@@ -81,55 +82,64 @@ func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse) erro
 	return nil
 }
 
-// QueryTxFromCache retrieves transactions from cache based on query parameters
-// It supports querying by chainId and chainId-tokenAddress combinations
-// Returns TransactionResponse containing matched transactions
+// QueryTxFromCache retrieves transactions from cache based on query parameters.
+// It supports querying by chainId or chainId-tokenAddress combinations.
+// If one cache lookup fails, it continues to check the others.
 func (r *RedisCache) QueryTxFromCache(req *types.TransactionQueryParams) (*model.TransactionResponse, error) {
 	resp := new(model.TransactionResponse)
-	log.Printf("Querying cache for chainIDs: %v, tokenAddress: %s", req.ChainIDs, req.TokenAddress)
 
-	if req.TokenAddress == "" {
-		// Query by chainId only
-		for _, chainID := range req.ChainIDs {
-			key := formatChainKey(chainID)
-			val, err := r.Get(key)
-			if err != nil {
-				log.Printf("No cache found for chain %d: %v", chainID, err)
-				continue
-			}
+	logger.Log.Debug().
+		Ints64("chainIDs", req.ChainIDs).
+		Str("tokenAddress", req.TokenAddress).
+		Msg("Querying cache")
 
-			var txs []model.Transaction
-			if err := json.Unmarshal([]byte(val), &txs); err != nil {
-				log.Printf("Failed to unmarshal transactions for chain %d: %v", chainID, err)
-				continue
-			}
-
-			log.Printf("Retrieved %d transactions for chain %d", len(txs), chainID)
-			resp.Result.Transactions = append(resp.Result.Transactions, txs...)
-		}
+	if len(req.ChainIDs) == 0 {
+		logger.Log.Warn().Msg("No chainIDs provided, skipping cache lookup")
+		return resp, nil
 	}
 
-	if req.TokenAddress != "" {
-		// Query by chainId-tokenAddress combination
-		for _, chainID := range req.ChainIDs {
-			key := formatTokenKey(chainID, req.TokenAddress)
-			val, err := r.Get(key)
-			if err != nil {
-				log.Printf("No cache found for chain %d token %s: %v", chainID, req.TokenAddress, err)
-				continue
-			}
-
-			var txs []model.Transaction
-			if err := json.Unmarshal([]byte(val), &txs); err != nil {
-				log.Printf("Failed to unmarshal token transactions for chain %d: %v", chainID, err)
-				continue
-			}
-
-			log.Printf("Retrieved %d token transactions for chain %d token %s", len(txs), chainID, req.TokenAddress)
-			resp.Result.Transactions = append(resp.Result.Transactions, txs...)
+	for _, chainID := range req.ChainIDs {
+		var key string
+		if req.TokenAddress == "" {
+			// Query by chainId only
+			key = formatChainKey(chainID)
+		} else {
+			// Query by chainId-tokenAddress combination
+			key = formatTokenKey(chainID, req.TokenAddress)
 		}
+
+		val, err := r.Get(key)
+		if err != nil {
+			logger.Log.Debug().
+				Int64("chainID", chainID).
+				Str("key", key).
+				Err(err).
+				Msg("Cache not found or failed to get")
+			continue
+		}
+
+		var txs []model.Transaction
+		if err := json.Unmarshal([]byte(val), &txs); err != nil {
+			logger.Log.Warn().
+				Int64("chainID", chainID).
+				Str("key", key).
+				Err(err).
+				Msg("Failed to unmarshal transactions from cache")
+			continue
+		}
+
+		logger.Log.Debug().
+			Int64("chainID", chainID).
+			Str("key", key).
+			Int("txCount", len(txs)).
+			Msg("Retrieved transactions from cache")
+
+		resp.Result.Transactions = append(resp.Result.Transactions, txs...)
 	}
 
-	log.Printf("Total transactions retrieved from cache: %d", len(resp.Result.Transactions))
+	logger.Log.Info().
+		Int("totalTxCount", len(resp.Result.Transactions)).
+		Msg("Finished querying cache")
+
 	return resp, nil
 }

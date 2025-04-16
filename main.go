@@ -29,7 +29,7 @@ func main() {
 
 	// Initialize Redis cache client
 	logger.Log.Info().Msg("Initializing Redis cache client...")
-	redisCache := cache.NewRedisClusterClient(config.AppConfig.Redis.Addrs, config.AppConfig.Redis.Password)
+	redisCache := cache.NewRedisCache(config.AppConfig.Redis.Addrs, config.AppConfig.Redis.Password)
 	logger.Log.Info().Msg("Redis cache client initialized successfully")
 
 	// Initialize Ankr provider

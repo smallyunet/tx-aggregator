@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"net/http"
 	"strconv"
@@ -34,38 +35,59 @@ func NewAnkrProvider(apiKey, url string) *AnkrProvider {
 	}
 }
 
-// GetTransactions combines both normal transactions and token transfers for the given address
-// It fetches data from Ankr API and transforms it into a unified transaction list
+// GetTransactions fetches and transforms both normal transactions and token transfers for the given address,
+// using concurrency in a more streamlined way (fetch & transform in the same goroutine).
 func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
 	logger.Log.Info().
 		Str("address", address).
 		Msg("Starting to fetch all transactions for address")
 
-	// 1. Fetch normal transactions (native token transfers)
-	normalTxResp, err := a.GetTransactionsByAddress(address)
-	if err != nil {
-		logger.Log.Error().
-			Err(err).
-			Str("address", address).
-			Msg("Failed to fetch normal transactions")
-		return nil, fmt.Errorf("failed to get normal transactions: %w", err)
+	var (
+		normalTxs []model.Transaction
+		tokenTxs  []model.Transaction
+	)
+
+	// Use an errgroup to concurrently fetch and transform both types of transactions
+	g := new(errgroup.Group)
+
+	// Concurrently fetch and transform normal transactions
+	g.Go(func() error {
+		normalTxResp, err := a.GetTransactionsByAddress(address)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("address", address).
+				Msg("Failed to fetch normal transactions")
+			return fmt.Errorf("failed to get normal transactions: %w", err)
+		}
+		// Transform directly at this step
+		normalTxs = a.transformNormalTransactions(normalTxResp, address)
+		return nil
+	})
+
+	// Concurrently fetch and transform token transfers
+	g.Go(func() error {
+		tokenTransferResp, err := a.GetTokenTransfers(address)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("address", address).
+				Msg("Failed to fetch token transfers")
+			return fmt.Errorf("failed to get token transfers: %w", err)
+		}
+		// Transform directly at this step
+		tokenTxs = a.transformTokenTransfers(tokenTransferResp, address)
+		return nil
+	})
+
+	// Wait for both concurrent tasks to complete
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	// 2. Fetch token transfers (ERC20/BEP20/etc)
-	tokenTransferResp, err := a.GetTokenTransfers(address)
-	if err != nil {
-		logger.Log.Error().
-			Err(err).
-			Str("address", address).
-			Msg("Failed to fetch token transfers")
-		return nil, fmt.Errorf("failed to get token transfers: %w", err)
-	}
-
-	// 3. Transform both responses into a unified transaction list
-	normalTxs := a.transformNormalTransactions(normalTxResp, address)
-	tokenTxs := a.transformTokenTransfers(tokenTransferResp, address)
-
+	// Merge the final results
 	transactions := append(normalTxs, tokenTxs...)
+
 	logger.Log.Info().
 		Str("address", address).
 		Int("normal_txs_count", len(normalTxs)).

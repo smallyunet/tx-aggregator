@@ -10,79 +10,64 @@ import (
 )
 
 // RedisCache provides a simple wrapper around a Redis client with context management.
-// It supports both single instance and cluster mode Redis connections.
+// It supports both single instance and cluster mode Redis connections through Cmdable interface.
 type RedisCache struct {
-	singleClient *redis.Client        // Redis client instance for single node operations
-	client       *redis.ClusterClient // Redis client instance for cluster operations
-	ctx          context.Context      // Context for Redis operations
+	client redis.Cmdable   // Unified Redis client interface (supports both single and cluster)
+	ctx    context.Context // Context for Redis operations
+	mode   string          // Debug mode: "single" or "cluster"
 }
 
-// NewRedisCache initializes a new Redis client with the given address and password.
-// It creates a single instance Redis connection.
-// Parameters:
-//   - addr: Redis server address in format "host:port"
-//   - password: Password for Redis authentication
-//
-// Returns:
-//   - *RedisCache: Initialized Redis cache instance
-func NewRedisCache(addr, password string) *RedisCache {
-	logger.Log.Info().
-		Str("addr", addr).
-		Msg("Initializing new Redis single instance client")
-
-	return &RedisCache{
-		singleClient: redis.NewClient(&redis.Options{
-			Addr:     addr,     // Redis server address
-			Password: password, // Password for Redis authentication
-			DB:       0,        // Use default DB
-		}),
-		ctx: context.Background(),
-	}
-}
-
-// NewRedisClusterClient initializes a new Redis cluster client and verifies the connection.
-// It creates both cluster and single instance clients for flexibility.
-// Parameters:
-//   - addrs: List of Redis cluster node addresses
-//   - password: Password for Redis authentication
-//
-// Returns:
-//   - *RedisCache: Initialized Redis cache instance with cluster support
-func NewRedisClusterClient(addrs []string, password string) *RedisCache {
+// NewRedisCache initializes a Redis client (single or cluster) based on the number of provided addresses.
+// If one address is given, it uses single-instance mode. If multiple, it uses cluster mode.
+func NewRedisCache(addrs []string, password string) *RedisCache {
 	ctx := context.Background()
-	logger.Log.Info().
-		Strs("addrs", addrs).
-		Msg("Initializing new Redis cluster client")
 
-	client := redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:    addrs,    // A list of cluster node addresses
-		Password: password, // Password for Redis authentication
-	})
-
-	// Try to ping the cluster to verify the connection
-	if err := client.Ping(ctx).Err(); err != nil {
-		logger.Log.Error().
-			Stack().
-			Err(err).
-			Strs("addrs", addrs).
-			Msg("Redis cluster client initialization failed")
-	} else {
+	if len(addrs) > 1 {
+		// Cluster mode
 		logger.Log.Info().
 			Strs("addrs", addrs).
-			Msg("Redis cluster client initialized successfully")
+			Msg("Initializing Redis cluster client")
+
+		clusterClient := redis.NewClusterClient(&redis.ClusterOptions{
+			Addrs:    addrs,
+			Password: password,
+		})
+
+		if err := clusterClient.Ping(ctx).Err(); err != nil {
+			logger.Log.Error().
+				Stack().
+				Err(err).
+				Strs("addrs", addrs).
+				Msg("Redis cluster client initialization failed")
+		} else {
+			logger.Log.Info().
+				Strs("addrs", addrs).
+				Msg("Redis cluster client initialized successfully")
+		}
+
+		return &RedisCache{
+			client: clusterClient,
+			ctx:    ctx,
+			mode:   "cluster",
+		}
 	}
 
-	sigleClient := redis.NewClient(&redis.Options{
-		Addr:     addrs[0], // Use the first address for single client
+	// Single instance mode
+	logger.Log.Info().
+		Str("addr", addrs[0]).
+		Msg("Initializing Redis single instance client")
+
+	singleClient := redis.NewClient(&redis.Options{
+		Addr:     addrs[0],
 		Password: password,
+		DB:       0,
 	})
 
-	// Try to ping the single client to verify the connection
-	if err := sigleClient.Ping(ctx).Err(); err != nil {
+	if err := singleClient.Ping(ctx).Err(); err != nil {
 		logger.Log.Error().
 			Stack().
 			Err(err).
-			Strs("addrs", addrs).
+			Str("addr", addrs[0]).
 			Msg("Redis single client initialization failed")
 	} else {
 		logger.Log.Info().
@@ -91,19 +76,13 @@ func NewRedisClusterClient(addrs []string, password string) *RedisCache {
 	}
 
 	return &RedisCache{
-		singleClient: sigleClient,
-		client:       client,
-		ctx:          ctx,
+		client: singleClient,
+		ctx:    ctx,
+		mode:   "single",
 	}
 }
 
 // Get retrieves a value associated with the given key as a string.
-// Parameters:
-//   - key: The key to retrieve
-//
-// Returns:
-//   - string: The value associated with the key
-//   - error: Any error that occurred during the operation
 func (r *RedisCache) Get(key string) (string, error) {
 	logger.Log.Debug().
 		Str("key", key).
@@ -111,10 +90,16 @@ func (r *RedisCache) Get(key string) (string, error) {
 
 	value, err := r.client.Get(r.ctx, key).Result()
 	if err != nil {
-		logger.Log.Error().
-			Err(err).
-			Str("key", key).
-			Msg("Failed to retrieve value from Redis")
+		if err == redis.Nil {
+			logger.Log.Debug().
+				Str("key", key).
+				Msg("Key not found in Redis")
+		} else {
+			logger.Log.Error().
+				Err(err).
+				Str("key", key).
+				Msg("Failed to retrieve value from Redis")
+		}
 		return "", err
 	}
 
@@ -125,14 +110,6 @@ func (r *RedisCache) Get(key string) (string, error) {
 }
 
 // Set stores a value under the given key with an expiration time.
-// The value is marshaled into JSON format before storing.
-// Parameters:
-//   - key: The key to store the value under
-//   - value: The value to store (will be JSON marshaled)
-//   - expiration: The duration after which the key will expire
-//
-// Returns:
-//   - error: Any error that occurred during the operation
 func (r *RedisCache) Set(key string, value interface{}, expiration time.Duration) error {
 	logger.Log.Debug().
 		Str("key", key).
@@ -164,11 +141,6 @@ func (r *RedisCache) Set(key string, value interface{}, expiration time.Duration
 }
 
 // Delete removes the specified key and its associated value from Redis.
-// Parameters:
-//   - key: The key to delete
-//
-// Returns:
-//   - error: Any error that occurred during the operation
 func (r *RedisCache) Delete(key string) error {
 	logger.Log.Debug().
 		Str("key", key).
@@ -189,15 +161,7 @@ func (r *RedisCache) Delete(key string) error {
 	return nil
 }
 
-// AddToSet adds a member to a Redis set identified by setKey.
-// If expiration is greater than 0, it sets the TTL on the setKey.
-// Parameters:
-//   - setKey: The key identifying the set
-//   - member: The member to add to the set
-//   - expiration: The duration after which the set will expire (0 for no expiration)
-//
-// Returns:
-//   - error: Any error that occurred during the operation
+// AddToSet adds a member to a Redis set identified by setKey and optionally sets expiration.
 func (r *RedisCache) AddToSet(setKey string, member string, expiration time.Duration) error {
 	logger.Log.Debug().
 		Str("setKey", setKey).
@@ -205,7 +169,6 @@ func (r *RedisCache) AddToSet(setKey string, member string, expiration time.Dura
 		Dur("expiration", expiration).
 		Msg("Adding member to Redis set")
 
-	// Add member to the set
 	if err := r.client.SAdd(r.ctx, setKey, member).Err(); err != nil {
 		logger.Log.Error().
 			Err(err).
@@ -215,7 +178,6 @@ func (r *RedisCache) AddToSet(setKey string, member string, expiration time.Dura
 		return err
 	}
 
-	// Set expiration on the key if needed
 	if expiration > 0 {
 		if err := r.client.Expire(r.ctx, setKey, expiration).Err(); err != nil {
 			logger.Log.Error().
@@ -235,12 +197,6 @@ func (r *RedisCache) AddToSet(setKey string, member string, expiration time.Dura
 }
 
 // GetSetMembers retrieves all members of a Redis set under the specified setKey.
-// Parameters:
-//   - setKey: The key identifying the set
-//
-// Returns:
-//   - []string: List of members in the set
-//   - error: Any error that occurred during the operation
 func (r *RedisCache) GetSetMembers(setKey string) ([]string, error) {
 	logger.Log.Debug().
 		Str("setKey", setKey).

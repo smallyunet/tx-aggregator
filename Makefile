@@ -38,6 +38,7 @@ start:
 	APP_ENV=$(APP_ENV) ./$(BINARY_NAME)
 
 dev:
+	@echo "AIR variable => $(AIR)"
 	@echo "Running dev mode with APP_ENV=$(APP_ENV)"
 	APP_ENV=$(APP_ENV) $(AIR)
 

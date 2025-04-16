@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 )
@@ -27,7 +26,6 @@ func (m *MultiProvider) GetTransactions(address string) (*model.TransactionRespo
 	logger.Log.Info().Str("address", address).Msg("Fetching transactions from multiple providers")
 
 	var allTransactions []model.Transaction
-	var lastErr error
 
 	for i, p := range m.providers {
 		logger.Log.Debug().Int("provider_index", i).Msg("Attempting to fetch from provider")
@@ -38,7 +36,6 @@ func (m *MultiProvider) GetTransactions(address string) (*model.TransactionRespo
 				Err(err).
 				Int("provider_index", i).
 				Msg("Provider failed, trying next provider")
-			lastErr = err
 			continue
 		}
 
@@ -51,14 +48,6 @@ func (m *MultiProvider) GetTransactions(address string) (*model.TransactionRespo
 
 			allTransactions = append(allTransactions, res.Result.Transactions...)
 		}
-	}
-
-	if len(allTransactions) == 0 {
-		logger.Log.Error().
-			Err(lastErr).
-			Str("address", address).
-			Msg("All providers failed to fetch transactions")
-		return nil, fmt.Errorf("all providers failed for address %s, last error: %v", address, lastErr)
 	}
 
 	logger.Log.Info().
