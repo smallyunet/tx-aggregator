@@ -30,18 +30,51 @@ func main() {
 	// Initialize Redis cache client
 	logger.Log.Info().Msg("Initializing Redis cache client...")
 	redisCache := cache.NewRedisCache(config.AppConfig.Redis.Addrs, config.AppConfig.Redis.Password)
-	logger.Log.Info().Msg("Redis cache client initialized successfully")
+	if redisCache == nil {
+		logger.Log.Fatal().Msg("Failed to initialize Redis cache client")
+	}
+	logger.Log.Info().
+		Strs("redis_addresses", config.AppConfig.Redis.Addrs).
+		Msg("Redis cache client initialized successfully")
 
-	// Initialize Ankr provider
-	logger.Log.Info().Msg("Initializing Ankr provider...")
-	ankrProvider := provider.NewAnkrProvider(config.AppConfig.Ankr.APIKey, config.AppConfig.Ankr.URL)
-	logger.Log.Info().Msg("Ankr provider initialized successfully")
+	// Initialize datasource providers
+	var providers []provider.Provider
+
+	// Ankr
+	logger.Log.Info().
+		Str("ankr_url", config.AppConfig.Ankr.URL).
+		Msg("Adding Ankr provider...")
+	providers = append(providers, provider.NewAnkrProvider(config.AppConfig.Ankr.APIKey, config.AppConfig.Ankr.URL))
+	logger.Log.Info().Msg("Ankr provider added successfully")
+
+	// Blockscout
+	logger.Log.Info().Msg("Adding Blockscout providers...")
+	for _, bs := range config.AppConfig.Blockscout {
+		chainID, exists := config.AppConfig.ChainIDs[bs.ChainName]
+		if !exists {
+			logger.Log.Warn().
+				Str("chain_name", bs.ChainName).
+				Msg("Chain ID not found for Blockscout provider, skipping...")
+			continue
+		}
+		logger.Log.Info().
+			Str("blockscout_url", bs.URL).
+			Str("chain_name", bs.ChainName).
+			Int64("chain_id", chainID).
+			Msg("Adding Blockscout provider...")
+		providers = append(providers, provider.NewBlockscoutProvider(bs.URL, chainID, bs.ChainName))
+		logger.Log.Info().
+			Str("chain_name", bs.ChainName).
+			Msg("Blockscout provider added successfully")
+	}
 
 	// Initialize multi-provider with Ankr as the primary provider
 	logger.Log.Info().Msg("Initializing multi-provider...")
-	multiProvider := provider.NewMultiProvider(ankrProvider)
+	multiProvider := provider.NewMultiProvider(providers...)
+	if multiProvider == nil {
+		logger.Log.Fatal().Msg("Failed to initialize multi-provider")
+	}
 	logger.Log.Info().Msg("Multi-provider initialized successfully")
-
 	// Initialize API components
 	logger.Log.Info().Msg("Initializing API components...")
 	api.Init(multiProvider, redisCache)

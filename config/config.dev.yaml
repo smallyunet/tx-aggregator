@@ -23,6 +23,11 @@ ankr:
     - avalanche
   request_page_size: 1000  # Number of records per API request
 
+# Blockscout providers (multiple chain support)
+blockscout:
+  - url: https://api.tantin.com/api/v2
+    chain_name: tantin
+
 # Cache configuration
 cache:
   ttl: 60  # Time-to-live for cached data in seconds
@@ -41,3 +46,4 @@ chain_ids:
   bsc: 56  # Binance Smart Chain
   polygon: 137  # Polygon (Matic)
   avalanche: 43114  # Avalanche C-Chain
+  tantin: 202502 # Tantin chain ID

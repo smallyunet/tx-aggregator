@@ -26,6 +26,11 @@ type Config struct {
 		RequestPageSize    int      `mapstructure:"request_page_size"`
 	} `mapstructure:"ankr"`
 
+	Blockscout []struct {
+		URL       string `mapstructure:"url"`
+		ChainName string `mapstructure:"chain_name"`
+	} `mapstructure:"blockscout"`
+
 	Cache struct {
 		TTLSeconds int `mapstructure:"ttl"`
 	} `mapstructure:"cache"`

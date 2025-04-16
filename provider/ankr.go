@@ -7,7 +7,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"tx-aggregator/config"
 
@@ -359,27 +358,4 @@ func (a *AnkrProvider) transformTokenTransfers(resp *model.AnkrTokenTransferResp
 		Int("transformed_count", len(transactions)).
 		Msg("Successfully transformed token transfers")
 	return transactions
-}
-
-// parseStringToInt64OrDefault converts a string to int64, supporting hex with "0x" prefix
-// Returns the default value if parsing fails
-func parseStringToInt64OrDefault(s string, def int64) int64 {
-	var val int64
-	var err error
-
-	if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
-		val, err = strconv.ParseInt(s[2:], 16, 64)
-	} else {
-		val, err = strconv.ParseInt(s, 10, 64)
-	}
-
-	if err != nil {
-		logger.Log.Warn().
-			Err(err).
-			Str("input", s).
-			Int64("default", def).
-			Msg("Failed to parse string to int64, using default value")
-		return def
-	}
-	return val
 }

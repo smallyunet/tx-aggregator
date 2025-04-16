@@ -74,10 +74,8 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*types.TransactionQueryParams,
 	if chainNamesParam == "" {
 		logger.Log.Debug().Msg("No chain names specified, using all configured blockchains")
 		// Use all blockchains if not specified
-		for _, name := range config.AppConfig.Ankr.RequestBlockchains {
-			if id := config.ChainIDByName(name); id != 0 {
-				chainIDs = append(chainIDs, id)
-			}
+		for _, id := range config.AppConfig.ChainIDs {
+			chainIDs = append(chainIDs, id)
 		}
 	} else {
 		logger.Log.Debug().Str("chain_names", chainNamesParam).Msg("Processing specified chain names")
