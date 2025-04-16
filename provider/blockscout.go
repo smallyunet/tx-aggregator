@@ -84,7 +84,7 @@ func (t *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 		if err != nil {
 			return err
 		}
-		internalTxs = t.transformTantinInternalTx(respData, address)
+		internalTxs = t.transformBlockscoutInternalTx(respData, address)
 		return nil
 	})
 
@@ -246,7 +246,7 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 			GasLimit:         gasLimit,
 			GasPrice:         tx.GasPrice, // keep as string
 			Nonce:            strconv.FormatInt(tx.Nonce, 10),
-			Type:             0,                    // 0 = normal transfer
+			Type:             model.TxTypeUnknown,  // 0 = normal transfer
 			CoinType:         model.CoinTypeNative, // 1 = native
 			TokenDisplayName: "",
 			Decimals:         model.NativeDefaultDecimals,
@@ -279,7 +279,7 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 		}
 
 		// We’ll see if any log indicates a recognized ERC-20 event
-		var finalTxType int = -1
+		var finalTxType int = model.TxTypeUnknown
 		var finalTokenAddr, finalApproveVal string
 
 		for _, lg := range logsForTx {
@@ -291,7 +291,7 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 				lg.Data,
 			)
 
-			if txType != -1 {
+			if txType != model.TxTypeUnknown {
 				finalTxType = txType
 				finalTokenAddr = tokenAddr
 				finalApproveVal = approveValue
@@ -303,7 +303,7 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 		}
 
 		// If we recognized an ERC-20 event, update the transaction
-		if finalTxType != -1 {
+		if finalTxType != model.TxTypeUnknown {
 			// If it’s an Approval, store the approval value
 			if finalTxType == model.TxTypeApprove {
 				normalTxs[i].ApproveShow = finalApproveVal
@@ -414,13 +414,13 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(resp *tantinToken
 			FromAddress:      tt.From.Hash,
 			ToAddress:        tt.To.Hash,
 			TokenAddress:     tt.Token.Address,
-			Amount:           tt.Total.Value,      // the raw string in subunits
-			GasUsed:          "",                  // not provided in token transfers
-			GasLimit:         0,                   // not provided
-			GasPrice:         "",                  // not provided
-			Nonce:            "",                  // not provided
-			Type:             0,                   // 0 = normal, 1 = approve, etc.
-			CoinType:         model.CoinTypeToken, // 2 = token
+			Amount:           tt.Total.Value,       // the raw string in subunits
+			GasUsed:          "",                   // not provided in token transfers
+			GasLimit:         0,                    // not provided
+			GasPrice:         "",                   // not provided
+			Nonce:            "",                   // not provided
+			Type:             model.TxTypeTransfer, // 0 = normal, 1 = approve, etc.
+			CoinType:         model.CoinTypeToken,  // 2 = token
 			TokenDisplayName: tt.Token.Name,
 			Decimals:         int(decimals),
 			CreatedTime:      unixTime,
@@ -503,9 +503,9 @@ func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*tantinI
 	return &result, nil
 }
 
-// transformTantinInternalTx converts internal transaction data into []model.Transaction.
+// transformBlockscoutInternalTx converts internal transaction data into []model.Transaction.
 // If you only want to store minimal details, this is an example approach.
-func (t *BlockscoutProvider) transformTantinInternalTx(resp *tantinInternalTxResponse, address string) []model.Transaction {
+func (t *BlockscoutProvider) transformBlockscoutInternalTx(resp *tantinInternalTxResponse, address string) []model.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
 		logger.Log.Warn().Msg("No internal transactions to transform from Tantin")
 		return nil
@@ -552,7 +552,7 @@ func (t *BlockscoutProvider) transformTantinInternalTx(resp *tantinInternalTxRes
 			GasLimit:         gasLimit,
 			GasPrice:         "",
 			Nonce:            "",
-			Type:             0,                    // can define a custom type code if desired
+			Type:             model.TxTypeInternal, // can define a custom type code if desired
 			CoinType:         model.CoinTypeNative, // typically native if transferring
 			TokenDisplayName: "",
 			Decimals:         model.NativeDefaultDecimals,

@@ -125,7 +125,7 @@ func handleGetTransactions(ctx *fiber.Ctx, params *types.TransactionQueryParams)
 	} else {
 		logger.Log.Info().Msg("Cache miss, fetching transactions from provider")
 		// Call provider if not in cache
-		rawResp, err := mulProvider.GetTransactions(params.Address)
+		resp, err = mulProvider.GetTransactions(params.Address)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to get transactions from provider")
 			code := model.CodeProviderFailed
@@ -136,24 +136,14 @@ func handleGetTransactions(ctx *fiber.Ctx, params *types.TransactionQueryParams)
 		}
 
 		// Apply filter
-		rawResp = usecase.FilterTransactionsByAddress(rawResp, params.Address)
+		resp = usecase.FilterTransactionsByAddress(resp, params.Address)
 		logger.Log.Info().
-			Int("filtered_transactions", len(rawResp.Result.Transactions)).
+			Int("filtered_transactions", len(resp.Result.Transactions)).
 			Msg("Filtered transactions by address")
 
 		// Save to cache
-		if err := redisCache.ParseTxAndSaveToCache(rawResp, params.Address); err != nil {
+		if err := redisCache.ParseTxAndSaveToCache(resp, params.Address); err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to save transactions to cache")
-			code := model.CodeInternalError
-			return &model.TransactionResponse{
-				Code:    code,
-				Message: model.GetMessageByCode(code),
-			}, err
-		}
-
-		resp, err = redisCache.QueryTxFromCache(params)
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to query transactions from cache after save")
 			code := model.CodeInternalError
 			return &model.TransactionResponse{
 				Code:    code,

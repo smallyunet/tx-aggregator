@@ -30,7 +30,7 @@ func DetectERC20Event(
 	const approveSig = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 
 	if len(topics) == 0 {
-		return -1, "", ""
+		return model.TxTypeUnknown, "", ""
 	}
 
 	// Convert to lower for matching
@@ -49,7 +49,7 @@ func DetectERC20Event(
 
 	default:
 		// Not recognized
-		return -1, "", ""
+		return model.TxTypeUnknown, "", ""
 	}
 }
 
@@ -57,13 +57,13 @@ func DetectERC20Event(
 func DetectERC20TypeForAnkr(logs []model.AnkrLogEntry) (typ int, tokenAddress, approveValue string) {
 	for _, log := range logs {
 		txType, tAddr, appVal := DetectERC20Event(log.Address, log.Topics, log.Data)
-		if txType != -1 {
+		if txType != model.TxTypeUnknown {
 			// As soon as you detect a recognized event, you can return it.
 			// Or, if you want to keep searching for multiple, you can adapt logic.
 			return txType, tAddr, appVal
 		}
 	}
-	return -1, "", ""
+	return model.TxTypeUnknown, "", ""
 }
 
 // parseStringToInt64OrDefault converts a string to int64, supporting hex with "0x" prefix

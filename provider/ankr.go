@@ -259,7 +259,7 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 		txType, tokenAddr, approveValue := DetectERC20TypeForAnkr(tx.Logs)
 
 		approveShow := ""
-		if txType != -1 {
+		if txType != model.TxTypeUnknown {
 			if txType == model.TxTypeApprove {
 				approveShow = approveValue // Directly assign hex string, e.g., "0x000000...0001"
 			}
@@ -336,12 +336,12 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(resp *model.AnkrTokenTransfer
 			ToAddress:        tr.ToAddress,
 			TokenAddress:     tr.ContractAddress,
 			Amount:           tr.Value,
-			GasUsed:          "",                  // not provided by transfer API
-			GasLimit:         0,                   // not available
-			GasPrice:         "",                  // not available
-			Nonce:            "",                  // not available
-			Type:             0,                   // default to transfer
-			CoinType:         model.CoinTypeToken, // 2 = token
+			GasUsed:          "",                   // not provided by transfer API
+			GasLimit:         0,                    // not available
+			GasPrice:         "",                   // not available
+			Nonce:            "",                   // not available
+			Type:             model.TxTypeTransfer, // default to transfer
+			CoinType:         model.CoinTypeToken,  // 2 = token
 			TokenDisplayName: tr.TokenName,
 			Decimals:         tr.TokenDecimals,
 			CreatedTime:      tr.Timestamp,
