@@ -8,7 +8,6 @@ import (
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/types"
 )
 
 // ParseTxAndSaveToCache processes transaction response and saves it to Redis cache in parallel
@@ -118,7 +117,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse, addr
 // QueryTxFromCache retrieves transactions from cache in parallel based on query parameters.
 // It supports querying by chainId or chainId-tokenAddress combinations.
 // If one cache lookup fails, it continues to check the others.
-func (r *RedisCache) QueryTxFromCache(req *types.TransactionQueryParams) (*model.TransactionResponse, error) {
+func (r *RedisCache) QueryTxFromCache(req *model.TransactionQueryParams) (*model.TransactionResponse, error) {
 	resp := new(model.TransactionResponse)
 
 	logger.Log.Debug().

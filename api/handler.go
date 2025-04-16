@@ -8,7 +8,6 @@ import (
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 	"tx-aggregator/provider"
-	"tx-aggregator/types"
 	"tx-aggregator/usecase"
 
 	"github.com/gofiber/fiber/v2"
@@ -61,7 +60,7 @@ func GetTransactions(ctx *fiber.Ctx) error {
 
 // parseTransactionQueryParams parses and validates query parameters from the request
 // Returns TransactionQueryParams struct and error if validation fails
-func parseTransactionQueryParams(ctx *fiber.Ctx) (*types.TransactionQueryParams, error) {
+func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams, error) {
 	address := ctx.Query("address")
 	if address == "" {
 		return nil, fmt.Errorf("address parameter is required")
@@ -89,7 +88,7 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*types.TransactionQueryParams,
 		}
 	}
 
-	params := &types.TransactionQueryParams{
+	params := &model.TransactionQueryParams{
 		Address:      strings.ToLower(address),
 		TokenAddress: strings.ToLower(ctx.Query("tokenAddress")),
 		ChainIDs:     chainIDs,
@@ -106,7 +105,7 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*types.TransactionQueryParams,
 
 // handleGetTransactions processes the transaction request by checking cache and provider
 // Returns TransactionResponse and error if processing fails
-func handleGetTransactions(ctx *fiber.Ctx, params *types.TransactionQueryParams) (*model.TransactionResponse, error) {
+func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams) (*model.TransactionResponse, error) {
 	logger.Log.Info().
 		Interface("params", params).
 		Msg("Processing transaction request")
