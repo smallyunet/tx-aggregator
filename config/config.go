@@ -29,6 +29,7 @@ type Config struct {
 	Blockscout []struct {
 		URL       string `mapstructure:"url"`
 		ChainName string `mapstructure:"chain_name"`
+		RPCURL    string `mapstructure:"rpc_url"`
 	} `mapstructure:"blockscout"`
 
 	Cache struct {

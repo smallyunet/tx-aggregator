@@ -62,7 +62,7 @@ func main() {
 			Str("chain_name", bs.ChainName).
 			Int64("chain_id", chainID).
 			Msg("Adding Blockscout provider...")
-		providers = append(providers, provider.NewBlockscoutProvider(bs.URL, chainID, bs.ChainName))
+		providers = append(providers, provider.NewBlockscoutProvider(bs.URL, chainID, bs.ChainName, bs.RPCURL))
 		logger.Log.Info().
 			Str("chain_name", bs.ChainName).
 			Msg("Blockscout provider added successfully")
