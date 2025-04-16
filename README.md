@@ -30,22 +30,13 @@ Tx Aggregator is a blockchain transaction data aggregation service that collects
 
 1. Clone the repository
 ```bash
-git clone http://gitlab.devops.tantin.com/walletbackend/tx-aggregator.git
-cd tx-aggregator
+git clone git@gitlab.devops.tantin.com:walletbackend/tantin_transaction_api.git
+cd tantin_transaction_api
 ```
 
-2. Configure environment variables
-Create a `.env` file with the following parameters:
-```
-ANKR_API_KEY=your_ankr_api_key
-ANKR_API_URL=your_ankr_api_url
-REDIS_ADDRS=redis_host:redis_port
-REDIS_PASSWORD=your_redis_password
-```
-
-3. Run the service
+2. Run the service
 ```bash
-go run main.go
+make dev
 ```
 
 ## API Usage
