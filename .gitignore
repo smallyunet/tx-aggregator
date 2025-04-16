@@ -141,7 +141,6 @@ fabric.properties
 
 # Project specific
 .idea
-start.sh
 .tx-aggregator
 
 # Log files

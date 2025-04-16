@@ -10,40 +10,51 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 # Air for hot reload
 AIR=air
 
-.PHONY: all build clean run start dev
+# Default environment
+APP_ENV ?= dev
+
+.PHONY: all build clean run start dev build-linux deps install-air
 
 all: build
 
 build:
+	@echo "Building binary..."
 	$(GOBUILD) -o $(BINARY_NAME) -v
 
 clean:
+	@echo "Cleaning build artifacts..."
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_UNIX)
 
 run:
-	$(GOBUILD) -o $(BINARY_NAME) -v
-	./$(BINARY_NAME)
+	@echo "Running with APP_ENV=$(APP_ENV)"
+	APP_ENV=$(APP_ENV) $(GOBUILD) -o $(BINARY_NAME) -v
+	APP_ENV=$(APP_ENV) ./$(BINARY_NAME)
 
 start:
-	$(GOBUILD) -o $(BINARY_NAME) -v
-	./$(BINARY_NAME)
+	@echo "Starting with APP_ENV=$(APP_ENV)"
+	APP_ENV=$(APP_ENV) $(GOBUILD) -o $(BINARY_NAME) -v
+	APP_ENV=$(APP_ENV) ./$(BINARY_NAME)
 
 dev:
-	$(AIR)
+	@echo "Running dev mode with APP_ENV=$(APP_ENV)"
+	APP_ENV=$(APP_ENV) $(AIR)
 
 # Cross compilation
 build-linux:
+	@echo "Cross compiling for Linux..."
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX) -v
 
 # Install dependencies
 deps:
+	@echo "Installing Go dependencies..."
 	$(GOGET) github.com/gofiber/fiber/v2
 	$(GOGET) github.com/redis/go-redis/v9
-	$(GOGET) github.com/joho/godotenv
+	$(GOGET) github.com/spf13/viper
 	$(GOGET) github.com/air-verse/air
 
 # Install air for hot reload
 install-air:
-	curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(GOPATH)/bin 
+	@echo "Installing Air (hot reload)..."
+	curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(GOPATH)/bin

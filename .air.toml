@@ -12,6 +12,7 @@ exclude_file = []
 delay = 1000
 stop_on_error = true
 log = "air.log"
+env = ["APP_ENV=dev"]
 
 [log]
 time = true
@@ -23,4 +24,4 @@ build = "yellow"
 runner = "green"
 
 [misc]
-clean_on_exit = true 
+clean_on_exit = true
