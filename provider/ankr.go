@@ -60,7 +60,7 @@ func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionRespon
 			return fmt.Errorf("failed to get normal transactions: %w", err)
 		}
 		// Transform directly at this step
-		normalTxs = a.transformNormalTransactions(normalTxResp, address)
+		normalTxs = a.transformAnkrNormalTx(normalTxResp, address)
 		return nil
 	})
 
@@ -75,7 +75,7 @@ func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionRespon
 			return fmt.Errorf("failed to get token transfers: %w", err)
 		}
 		// Transform directly at this step
-		tokenTxs = a.transformTokenTransfers(tokenTransferResp, address)
+		tokenTxs = a.transformAnkrTokenTransfers(tokenTransferResp, address)
 		return nil
 	})
 
@@ -234,9 +234,9 @@ func (p *AnkrProvider) sendRequest(requestBody interface{}, result interface{}) 
 	return nil
 }
 
-// transformNormalTransactions converts AnkrTransactionResponse into a slice of model.Transaction
+// transformAnkrNormalTx converts AnkrTransactionResponse into a slice of model.Transaction
 // These are native token transfers (ETH, BNB, MATIC, etc.)
-func (a *AnkrProvider) transformNormalTransactions(resp *model.AnkrTransactionResponse, address string) []model.Transaction {
+func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse, address string) []model.Transaction {
 	if resp == nil || resp.Result.Transactions == nil {
 		logger.Log.Warn().
 			Msg("No normal transactions to transform")
@@ -256,11 +256,9 @@ func (a *AnkrProvider) transformNormalTransactions(resp *model.AnkrTransactionRe
 		gasLimit := parseStringToInt64OrDefault(tx.Gas, 0)
 
 		// Detect ERC20 type and approve value from transaction logs
-		txType, tokenAddr, approveValue := DetectERC20Type(tx.Logs)
+		txType, tokenAddr, approveValue := DetectERC20TypeForAnkr(tx.Logs)
 
 		approveShow := ""
-		iconURL := ""
-
 		if txType != -1 {
 			if txType == model.TxTypeApprove {
 				approveShow = approveValue // Directly assign hex string, e.g., "0x000000...0001"
@@ -295,7 +293,7 @@ func (a *AnkrProvider) transformNormalTransactions(resp *model.AnkrTransactionRe
 			ModifiedTime:     timestamp,
 			TranType:         tranType,
 			ApproveShow:      approveShow,
-			IconURL:          iconURL,
+			IconURL:          "",
 		})
 	}
 
@@ -305,9 +303,9 @@ func (a *AnkrProvider) transformNormalTransactions(resp *model.AnkrTransactionRe
 	return transactions
 }
 
-// transformTokenTransfers converts AnkrTokenTransferResponse into a slice of model.Transaction
+// transformAnkrTokenTransfers converts AnkrTokenTransferResponse into a slice of model.Transaction
 // These represent ERC20/BEP20/etc token transfers
-func (a *AnkrProvider) transformTokenTransfers(resp *model.AnkrTokenTransferResponse, address string) []model.Transaction {
+func (a *AnkrProvider) transformAnkrTokenTransfers(resp *model.AnkrTokenTransferResponse, address string) []model.Transaction {
 	if resp == nil || resp.Result.Transfers == nil {
 		logger.Log.Warn().
 			Msg("No token transfers to transform")
