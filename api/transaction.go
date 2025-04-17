@@ -16,6 +16,8 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams,
 	address := ctx.Query("address")
 	if address == "" {
 		return nil, fmt.Errorf("address parameter is required")
+	} else if !isValidEthereumAddress(address) {
+		return nil, fmt.Errorf("invalid address: %s", address)
 	}
 
 	// Get chainNames from query, e.g., "eth,bsc"
@@ -40,9 +42,14 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams,
 		}
 	}
 
+	tokenAddressParam := strings.ToLower(ctx.Query("tokenAddress"))
+	if tokenAddressParam != "" && !isValidEthereumAddress(tokenAddressParam) && tokenAddressParam != model.NativeTokenName {
+		return nil, fmt.Errorf("invalid token address: %s", tokenAddressParam)
+	}
+
 	params := &model.TransactionQueryParams{
 		Address:      strings.ToLower(address),
-		TokenAddress: strings.ToLower(ctx.Query("tokenAddress")),
+		TokenAddress: tokenAddressParam,
 		ChainIDs:     chainIDs,
 	}
 
@@ -103,13 +110,26 @@ func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams)
 		}
 	}
 
+	// Filter transactions by chain ID
+	resp = usecase.FilterTransactionsByChainIDs(resp, params.ChainIDs)
+	logger.Log.Info().
+		Int("filtered_transactions_by_chain_id", len(resp.Result.Transactions)).
+		Msg("Filtered transactions by chain ID")
+
 	// Check if any transactions were found
 	if params.TokenAddress != "" {
-		// Filter by token address if provided
-		resp = usecase.FilterTransactionsByTokenAddress(resp, params)
-		logger.Log.Info().
-			Int("filtered_transactions_by_token", len(resp.Result.Transactions)).
-			Msg("Filtered transactions by token address")
+		if params.TokenAddress != model.NativeTokenName {
+			// Filter by token address if provided
+			resp = usecase.FilterTransactionsByTokenAddress(resp, params)
+			logger.Log.Info().
+				Int("filtered_transactions_by_token", len(resp.Result.Transactions)).
+				Msg("Filtered transactions by token address")
+		} else if params.TokenAddress == model.NativeTokenName {
+			resp = usecase.FilterTransactionsByCoinType(resp, model.CoinTypeNative)
+			logger.Log.Info().
+				Int("filtered_transactions_by_coin_type", len(resp.Result.Transactions)).
+				Msg("Filtered transactions by coin type")
+		}
 	}
 
 	// ✅ Sort and limit transactions regardless of source

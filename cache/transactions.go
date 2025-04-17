@@ -22,17 +22,23 @@ func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse, addr
 	log.Printf("Processing %d transactions for caching", len(resp.Result.Transactions))
 
 	// Initialize maps for grouping transactions
-	chainTxMap := make(map[int64][]model.Transaction)  // chainId -> transactions
-	tokenTxMap := make(map[string][]model.Transaction) // chainId-tokenAddress -> transactions
-	tokenSetMap := make(map[int64]map[string]struct{}) // chainId -> set of token addresses
+	chainTxMap := make(map[int64][]model.Transaction)   // chainId -> transactions
+	nativeTxMap := make(map[string][]model.Transaction) // key: chainId + native
+	tokenTxMap := make(map[string][]model.Transaction)  // chainId-tokenAddress -> transactions
+	tokenSetMap := make(map[int64]map[string]struct{})  // chainId -> set of token addresses
 
 	// Group transactions by chainId and tokenAddress
 	for _, tx := range resp.Result.Transactions {
 		// Append to chainId group
 		chainTxMap[tx.ChainID] = append(chainTxMap[tx.ChainID], tx)
 
+		if tx.CoinType == model.CoinTypeNative {
+			key := formatNativeKey(address, tx.ChainID)
+			nativeTxMap[key] = append(nativeTxMap[key], tx)
+		}
+
 		// If token transaction, append to chainId-tokenAddress group
-		if tx.CoinType == 2 && tx.TokenAddress != "" {
+		if tx.CoinType == model.CoinTypeToken && tx.TokenAddress != "" {
 			key := formatTokenKey(address, tx.ChainID, tx.TokenAddress)
 			tokenTxMap[key] = append(tokenTxMap[key], tx)
 
@@ -64,6 +70,19 @@ func (r *RedisCache) ParseTxAndSaveToCache(resp *model.TransactionResponse, addr
 				errChan <- err
 			}
 		}(chainID, txs)
+	}
+
+	// Save native transactions in parallel
+	for key, txs := range nativeTxMap {
+		wg.Add(1)
+		go func(key string, txs []model.Transaction) {
+			defer wg.Done()
+			log.Printf("Caching %d native transactions for key %s", len(txs), key)
+			if err := r.Set(key, txs, ttlSeconds); err != nil {
+				log.Printf("Failed to cache native transactions for key %s: %v", key, err)
+				errChan <- err
+			}
+		}(key, txs)
 	}
 
 	// Save token-specific transactions in parallel

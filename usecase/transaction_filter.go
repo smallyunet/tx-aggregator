@@ -38,6 +38,43 @@ func FilterTransactionsByTokenAddress(resp *model.TransactionResponse, params *m
 	return resp
 }
 
+// FilterTransactionsByCoinType filters transactions to only include those with the specified coin type.
+func FilterTransactionsByCoinType(resp *model.TransactionResponse, coinType int) *model.TransactionResponse {
+	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
+
+	for _, tx := range resp.Result.Transactions {
+		if tx.CoinType == coinType {
+			filtered = append(filtered, tx)
+		}
+	}
+
+	resp.Result.Transactions = filtered
+	return resp
+}
+
+// FilterTransactionsByChainIDs filters transactions to only include those with the specified chain IDs.
+func FilterTransactionsByChainIDs(resp *model.TransactionResponse, chainIDs []int64) *model.TransactionResponse {
+	if len(chainIDs) == 0 {
+		return resp
+	}
+
+	// Use a set for fast lookup
+	chainIDSet := make(map[int64]struct{}, len(chainIDs))
+	for _, id := range chainIDs {
+		chainIDSet[id] = struct{}{}
+	}
+
+	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
+	for _, tx := range resp.Result.Transactions {
+		if _, ok := chainIDSet[tx.ChainID]; ok {
+			filtered = append(filtered, tx)
+		}
+	}
+
+	resp.Result.Transactions = filtered
+	return resp
+}
+
 // LimitTransactions limits the number of transactions to a maximum count.
 func LimitTransactions(resp *model.TransactionResponse, max int) *model.TransactionResponse {
 	txs := resp.Result.Transactions

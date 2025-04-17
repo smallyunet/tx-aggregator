@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"tx-aggregator/model"
 )
 
 // formatChainKey generates a cache key for a specific chain with an address prefix
@@ -13,6 +14,17 @@ import (
 //   - string: The formatted cache key for the chain
 func formatChainKey(address string, chainID int64) string {
 	return fmt.Sprintf("%s-%d", address, chainID)
+}
+
+// formatNativeKey generates a cache key for the native token on a specific chain with an address prefix
+// Parameters:
+//   - address: The address to use as a prefix
+//   - chainID: The unique identifier of the blockchain
+//
+// Returns:
+//   - string: The formatted cache key for the native token
+func formatNativeKey(address string, chainID int64) string {
+	return fmt.Sprintf("%s-%d-%s", address, chainID, model.NativeTokenName)
 }
 
 // formatTokenKey generates a cache key for a specific token on a specific chain with an address prefix

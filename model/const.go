@@ -6,6 +6,9 @@ const (
 	CoinTypeNative = 1
 	// CoinTypeToken represents ERC20/ERC721 tokens
 	CoinTypeToken = 2
+
+	// NativeTokenName is the name for native tokens
+	NativeTokenName = "native"
 )
 
 // TxType represents the type of transaction

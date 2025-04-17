@@ -7,8 +7,6 @@
 package provider
 
 import (
-	"tx-aggregator/config"
-
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 
@@ -19,12 +17,12 @@ import (
 // data from a Blockscout‑compatible API.
 type BlockscoutProvider struct {
 	chainID int64 // Numeric chain ID
-	config  config.BlockscoutConfig
+	config  model.BlockscoutConfig
 }
 
 // NewBlockscoutProvider returns a new BlockscoutProvider.
 // Trailing slashes are trimmed from baseURL for consistency.
-func NewBlockscoutProvider(chainID int64, config config.BlockscoutConfig) *BlockscoutProvider {
+func NewBlockscoutProvider(chainID int64, config model.BlockscoutConfig) *BlockscoutProvider {
 	logger.Log.Info().
 		Msg("Initializing BlockscoutProvider")
 
