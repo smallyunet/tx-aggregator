@@ -6,14 +6,30 @@ import (
 	"tx-aggregator/model"
 )
 
-// FilterTransactionsByAddress filters transactions to only include those where the address
+// FilterTransactionsByInvolvedAddress filters transactions to only include those where the address
 // is either the sender or the receiver.
-func FilterTransactionsByAddress(resp *model.TransactionResponse, address string) *model.TransactionResponse {
+func FilterTransactionsByInvolvedAddress(resp *model.TransactionResponse, params *model.TransactionQueryParams) *model.TransactionResponse {
 	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
-	addrLower := strings.ToLower(address)
+	addrLower := strings.ToLower(params.Address)
+	tokenAddrLower := strings.ToLower(params.TokenAddress)
 
 	for _, tx := range resp.Result.Transactions {
-		if strings.ToLower(tx.FromAddress) == addrLower || strings.ToLower(tx.ToAddress) == addrLower {
+		if strings.ToLower(tx.FromAddress) == addrLower || strings.ToLower(tx.ToAddress) == addrLower || strings.ToLower(tx.TokenAddress) == tokenAddrLower {
+			filtered = append(filtered, tx)
+		}
+	}
+
+	resp.Result.Transactions = filtered
+	return resp
+}
+
+// FilterTransactionsByTokenAddress filters transactions to only include those with the specified token address.
+func FilterTransactionsByTokenAddress(resp *model.TransactionResponse, params *model.TransactionQueryParams) *model.TransactionResponse {
+	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
+	tokenAddrLower := strings.ToLower(params.TokenAddress)
+
+	for _, tx := range resp.Result.Transactions {
+		if strings.ToLower(tx.TokenAddress) == tokenAddrLower {
 			filtered = append(filtered, tx)
 		}
 	}

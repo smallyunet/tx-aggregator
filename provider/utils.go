@@ -137,3 +137,27 @@ func NormalizeNumericString(input string) (string, error) {
 	// Already a valid decimal string
 	return input, nil
 }
+
+// PatchTokenTransactionsWithGasInfo updates token transactions with gas-related fields
+// by looking up matching tx hash from the normal transactions.
+func PatchTokenTransactionsWithGasInfo(
+	tokenTxs []model.Transaction,
+	normalTxs []model.Transaction,
+) []model.Transaction {
+	// Build a lookup map from normal transactions
+	txMap := make(map[string]model.Transaction, len(normalTxs))
+	for _, tx := range normalTxs {
+		txMap[tx.Hash] = tx
+	}
+
+	// Patch token transactions
+	for i, tokenTx := range tokenTxs {
+		if normal, ok := txMap[tokenTx.Hash]; ok {
+			tokenTxs[i].GasLimit = normal.GasLimit
+			tokenTxs[i].GasUsed = normal.GasUsed
+			tokenTxs[i].GasPrice = normal.GasPrice
+			tokenTxs[i].Nonce = normal.Nonce
+		}
+	}
+	return tokenTxs
+}

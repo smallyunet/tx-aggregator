@@ -87,10 +87,10 @@ func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams)
 		}
 
 		// Apply filter
-		resp = usecase.FilterTransactionsByAddress(resp, params.Address)
+		resp = usecase.FilterTransactionsByInvolvedAddress(resp, params)
 		logger.Log.Info().
 			Int("filtered_transactions", len(resp.Result.Transactions)).
-			Msg("Filtered transactions by address")
+			Msg("Filtered transactions by involoved address")
 
 		// Save to cache
 		if err := redisCache.ParseTxAndSaveToCache(resp, params.Address); err != nil {
@@ -101,6 +101,15 @@ func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams)
 				Message: model.GetMessageByCode(code),
 			}, err
 		}
+	}
+
+	// Check if any transactions were found
+	if params.TokenAddress != "" {
+		// Filter by token address if provided
+		resp = usecase.FilterTransactionsByTokenAddress(resp, params)
+		logger.Log.Info().
+			Int("filtered_transactions_by_token", len(resp.Result.Transactions)).
+			Msg("Filtered transactions by token address")
 	}
 
 	// ✅ Sort and limit transactions regardless of source

@@ -13,7 +13,7 @@ import (
 // fetchBlockscoutTokenTransfers retrieves token transfers from Blockscout:
 // GET /addresses/{address}/token-transfers
 func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*model.BlockscoutTokenTransferResponse, error) {
-	url := fmt.Sprintf("%s/addresses/%s/token-transfers", t.baseURL, address)
+	url := fmt.Sprintf("%s/addresses/%s/token-transfers?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	logger.Log.Debug().Str("url", url).Msg("Fetching token transfers from Blockscout")
 
 	resp, err := http.Get(url)

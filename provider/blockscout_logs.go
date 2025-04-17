@@ -14,7 +14,7 @@ import (
 // fetchBlockscoutLogs retrieves logs from Blockscout:
 // GET /addresses/{address}/logs
 func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.BlockscoutLogResponse, error) {
-	url := fmt.Sprintf("%s/addresses/%s/logs", t.baseURL, address)
+	url := fmt.Sprintf("%s/addresses/%s/logs?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	logger.Log.Debug().Str("url", url).Msg("Fetching logs from Blockscout")
 
 	resp, err := http.Get(url)
@@ -68,7 +68,7 @@ func (t *BlockscoutProvider) fetchLogsByBlockFromRPC(blocks map[int64]struct{}) 
 	}
 
 	// 2. Send HTTP POST request
-	resp, err := http.Post(t.rpcURL, "application/json", bytes.NewReader(reqBody))
+	resp, err := http.Post(t.config.RPCURL, "application/json", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch block receipts from RPC: %w", err)
 	}

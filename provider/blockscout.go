@@ -7,35 +7,30 @@
 package provider
 
 import (
-	"strings"
+	"tx-aggregator/config"
 
-	"golang.org/x/sync/errgroup"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // BlockscoutProvider implements the Provider interface for fetching transaction
 // data from a Blockscout‑compatible API.
 type BlockscoutProvider struct {
-	baseURL  string // Base URL of the Blockscout API, e.g. "https://api.blockscout.com/api/v2"
-	chainID  int64  // Numeric chain ID
-	chainKey string // Optional identifier for the chain, e.g. "bsc", "eth"
-	rpcURL   string // Optional RPC endpoint for pulling logs from block receipts
+	chainID int64 // Numeric chain ID
+	config  config.BlockscoutConfig
 }
 
 // NewBlockscoutProvider returns a new BlockscoutProvider.
 // Trailing slashes are trimmed from baseURL for consistency.
-func NewBlockscoutProvider(baseURL string, chainID int64, chainKey, rpcURL string) *BlockscoutProvider {
+func NewBlockscoutProvider(chainID int64, config config.BlockscoutConfig) *BlockscoutProvider {
 	logger.Log.Info().
-		Str("baseURL", baseURL).
-		Str("rpcURL", rpcURL).
 		Msg("Initializing BlockscoutProvider")
 
 	return &BlockscoutProvider{
-		baseURL:  strings.TrimRight(baseURL, "/"),
-		chainID:  chainID,
-		chainKey: chainKey,
-		rpcURL:   rpcURL,
+		chainID: chainID,
+		config:  config,
 	}
 }
 
@@ -43,7 +38,7 @@ func NewBlockscoutProvider(baseURL string, chainID int64, chainKey, rpcURL strin
 // and returns a unified TransactionResponse.
 func (p *BlockscoutProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
 	logger.Log.Info().
-		Str("chain", p.chainKey).
+		Str("chain", p.config.ChainName).
 		Str("address", address).
 		Msg("Fetching transactions from Blockscout")
 
@@ -111,7 +106,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 	// --------------------------------------------------------------------
 	// Optional RPC receipts query (requires normalTxs + rpcURL to be present)
 	// --------------------------------------------------------------------
-	if len(normalTxs) > 0 && p.rpcURL != "" {
+	if len(normalTxs) > 0 && p.config.RPCURL != "" {
 		blocks := make(map[int64]struct{}, len(normalTxs))
 		for _, tx := range normalTxs {
 			blocks[tx.Height] = struct{}{}
@@ -131,6 +126,9 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 		normalTxs = p.transformBlockscoutNormalTxWithLogs(normalTxs, allLogs, address)
 	}
 
+	// Patch tokenTxs with gas info from normalTxs
+	tokenTxs = PatchTokenTransactionsWithGasInfo(tokenTxs, normalTxs)
+
 	// Aggregate and return all transactions.
 	allTxs := append(normalTxs, tokenTxs...)
 	allTxs = append(allTxs, internalTxs...)
@@ -140,7 +138,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 		Int("token_count", len(tokenTxs)).
 		Int("internal_count", len(internalTxs)).
 		Int("total_transactions", len(allTxs)).
-		Str("chain", p.chainKey).
+		Str("chain", p.config.ChainName).
 		Str("address", address).
 		Msg("Successfully fetched and merged Blockscout transactions")
 

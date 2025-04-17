@@ -13,7 +13,7 @@ import (
 // fetchBlockscoutInternalTx retrieves internal transactions from Blockscout:
 // GET /addresses/{address}/internal-transactions
 func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.BlockscoutInternalTxResponse, error) {
-	url := fmt.Sprintf("%s/addresses/%s/internal-transactions", t.baseURL, address)
+	url := fmt.Sprintf("%s/addresses/%s/internal-transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	logger.Log.Debug().Str("url", url).Msg("Fetching internal transactions from Blockscout")
 
 	resp, err := http.Get(url)

@@ -14,7 +14,7 @@ import (
 // fetchBlockscoutNormalTx retrieves normal transactions from the Blockscout endpoint:
 // GET /addresses/{address}/transactions
 func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.BlockscoutTransactionResponse, error) {
-	url := fmt.Sprintf("%s/addresses/%s/transactions", t.baseURL, address)
+	url := fmt.Sprintf("%s/addresses/%s/transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	logger.Log.Debug().Str("url", url).Msg("Fetching normal transactions from Blockscout")
 
 	resp, err := http.Get(url)

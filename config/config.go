@@ -26,11 +26,7 @@ type Config struct {
 		RequestPageSize    int      `mapstructure:"request_page_size"`
 	} `mapstructure:"ankr"`
 
-	Blockscout []struct {
-		URL       string `mapstructure:"url"`
-		ChainName string `mapstructure:"chain_name"`
-		RPCURL    string `mapstructure:"rpc_url"`
-	} `mapstructure:"blockscout"`
+	Blockscout []BlockscoutConfig `mapstructure:"blockscout"`
 
 	Cache struct {
 		TTLSeconds int `mapstructure:"ttl"`
@@ -45,6 +41,14 @@ type Config struct {
 	} `mapstructure:"response"`
 
 	ChainIDs map[string]int64 `mapstructure:"chain_ids"`
+}
+
+// BlockscoutConfig represents a single Blockscout instance configuration.
+type BlockscoutConfig struct {
+	URL             string `mapstructure:"url"`
+	ChainName       string `mapstructure:"chain_name"`
+	RPCURL          string `mapstructure:"rpc_url"`
+	RequestPageSize int64  `mapstructure:"request_page_size"`
 }
 
 // AppConfig is the global configuration instance

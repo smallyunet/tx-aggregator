@@ -28,6 +28,7 @@ blockscout:
   - url: https://api.tantin.com/api/v2
     chain_name: tantin
     rpc_url: https://rpc.tantin.com
+    request_page_size: 1000
 
 # Cache configuration
 cache:
