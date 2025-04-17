@@ -13,12 +13,13 @@ const (
 
 // TxType represents the type of transaction
 const (
-	TxTypeInternal = -2
-	TxTypeUnknown  = -1
+	TxTypeUnknown = -1
 	// TxTypeTransfer represents a standard transfer transaction
 	TxTypeTransfer = 0
 	// TxTypeApprove represents an approval transaction for token spending
 	TxTypeApprove = 1
+	// TxTypeInternal represents an internal transaction (e.g., contract interaction)
+	TxTypeInternal = 2
 )
 
 // TransType represents the direction of transaction
