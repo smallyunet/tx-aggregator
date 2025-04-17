@@ -9,13 +9,14 @@ type Transaction struct {
 	State        int    `json:"state"`
 	Height       int64  `json:"height"`
 	Hash         string `json:"hash"`
+	TxIndex      int64  `json:"txIndex"`
 	BlockHash    string `json:"blockHash"`
 	FromAddress  string `json:"fromAddress"`
 	ToAddress    string `json:"toAddress"`
 	TokenAddress string `json:"tokenAddress"`
 	Amount       string `json:"amount"`
 	GasUsed      string `json:"gasUsed"`
-	GasLimit     int64  `json:"gasLimit"`
+	GasLimit     string `json:"gasLimit"`
 	GasPrice     string `json:"gasPrice"`
 	Nonce        string `json:"nonce"`
 
@@ -25,7 +26,7 @@ type Transaction struct {
 	// 1: native, 2: token
 	CoinType         int    `json:"coinType"`
 	TokenDisplayName string `json:"tokenDisplayName"`
-	Decimals         int    `json:"decimals"`
+	Decimals         int64  `json:"decimals"`
 
 	CreatedTime  int64 `json:"createdTime"`
 	ModifiedTime int64 `json:"modifiedTime"`

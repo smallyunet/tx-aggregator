@@ -76,9 +76,9 @@ type TokenTransfer struct {
 	ValueRawInteger string `json:"valueRawInteger"` // Transfer amount in raw integer format
 	TokenName       string `json:"tokenName"`       // Name of the token
 	TokenSymbol     string `json:"tokenSymbol"`     // Symbol of the token
-	TokenDecimals   int    `json:"tokenDecimals"`   // Number of decimal places for the token
+	TokenDecimals   int64  `json:"tokenDecimals"`   // Number of decimal places for the token
 	TransactionHash string `json:"transactionHash"` // Hash of the transaction
-	BlockHeight     int    `json:"blockHeight"`     // Block height of the transfer
+	BlockHeight     int64  `json:"blockHeight"`     // Block height of the transfer
 	Timestamp       int64  `json:"timestamp"`       // Timestamp of the transfer
 	Blockchain      string `json:"blockchain"`      // Blockchain network identifier
 	Thumbnail       string `json:"thumbnail"`       // URL to token thumbnail/logo image

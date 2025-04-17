@@ -31,9 +31,9 @@ func LimitTransactions(resp *model.TransactionResponse, max int) *model.Transact
 	return resp
 }
 
-// SortTransactionResponseByHeightAndHash sorts the transactions inside TransactionResponse.
-// It first sorts by height (ascending or descending), then by hash in lexicographical order.
-func SortTransactionResponseByHeightAndHash(resp *model.TransactionResponse, ascending bool) {
+// SortTransactionResponseByHeightAndIndex sorts transactions by block height and txIndex.
+// If heights are the same, it sorts by txIndex in ascending order.
+func SortTransactionResponseByHeightAndIndex(resp *model.TransactionResponse, ascending bool) {
 	if resp == nil || len(resp.Result.Transactions) == 0 {
 		return
 	}
@@ -43,8 +43,10 @@ func SortTransactionResponseByHeightAndHash(resp *model.TransactionResponse, asc
 		txJ := resp.Result.Transactions[j]
 
 		if txI.Height == txJ.Height {
-			// If height is equal, compare hash lexicographically
-			return txI.Hash < txJ.Hash
+			if ascending {
+				return txI.TxIndex < txJ.TxIndex
+			}
+			return txI.TxIndex > txJ.TxIndex
 		}
 
 		if ascending {

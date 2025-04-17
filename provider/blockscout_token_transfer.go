@@ -72,13 +72,13 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(resp *model.Block
 			TokenAddress:     tt.Token.Address,
 			Amount:           tt.Total.Value,       // the raw string in subunits
 			GasUsed:          "",                   // not provided in token transfers
-			GasLimit:         0,                    // not provided
+			GasLimit:         "",                   // not provided
 			GasPrice:         "",                   // not provided
 			Nonce:            "",                   // not provided
 			Type:             model.TxTypeTransfer, // 0 = normal, 1 = approve, etc.
 			CoinType:         model.CoinTypeToken,  // 2 = token
 			TokenDisplayName: tt.Token.Name,
-			Decimals:         int(decimals),
+			Decimals:         decimals,
 			CreatedTime:      unixTime,
 			ModifiedTime:     unixTime,
 			TranType:         tranType,

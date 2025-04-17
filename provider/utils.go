@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -100,4 +102,38 @@ func parseBlockscoutTimestampToUnix(ts string) int64 {
 		return 0
 	}
 	return parsed.Unix()
+}
+
+// mergeLogMaps appends logs from src into dst (keyed by tx hash).
+// Duplicate logs are allowed; add deduplication here if required.
+func mergeLogMaps(dst, src map[string][]model.BlockscoutLog) {
+	for hash, logs := range src {
+		dst[hash] = append(dst[hash], logs...)
+	}
+}
+
+// NormalizeNumericString converts a numeric string (hex like "0x5208" or decimal like "21000")
+// into a standardized decimal string. Returns error for invalid input.
+func NormalizeNumericString(input string) (string, error) {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return "", errors.New("empty input string")
+	}
+
+	// Check if it's a hex string (starts with "0x" or "0X")
+	if strings.HasPrefix(input, "0x") || strings.HasPrefix(input, "0X") {
+		val, err := strconv.ParseUint(input[2:], 16, 64)
+		if err != nil {
+			return "", fmt.Errorf("invalid hex string: %w", err)
+		}
+		return fmt.Sprintf("%d", val), nil
+	}
+
+	// Try parsing as decimal to validate format
+	if _, err := strconv.ParseUint(input, 10, 64); err != nil {
+		return "", fmt.Errorf("invalid decimal string: %w", err)
+	}
+
+	// Already a valid decimal string
+	return input, nil
 }

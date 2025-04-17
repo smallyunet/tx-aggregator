@@ -72,7 +72,7 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(resp *model.Blockscou
 			tranType = model.TransTypeIn
 		}
 
-		gasLimit := parseStringToInt64OrDefault(itx.GasLimit, 0)
+		gasLimit, _ := NormalizeNumericString(itx.GasLimit)
 
 		transactions = append(transactions, model.Transaction{
 			ChainID:          t.chainID,

@@ -1,28 +1,36 @@
+// File: provider/blockscout_provider.go
+// Package provider implements data sources for the transaction‑aggregator service.
+// The BlockscoutProvider fetches transactions, token transfers, internal
+// transactions, and logs from a Blockscout‑compatible REST API, and (optionally)
+// extra logs from an RPC endpoint. All comments are in English as requested.
+
 package provider
 
 import (
-	"golang.org/x/sync/errgroup"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 )
 
-// BlockscoutProvider implements the Provider interface for fetching transactions,
-// token transfers, internal transactions, and logs from a Blockscout-compatible API.
+// BlockscoutProvider implements the Provider interface for fetching transaction
+// data from a Blockscout‑compatible API.
 type BlockscoutProvider struct {
-	baseURL  string // Base URL for the Blockscout API, e.g., "https://api.blockscout.com/api/v2"
+	baseURL  string // Base URL of the Blockscout API, e.g. "https://api.blockscout.com/api/v2"
 	chainID  int64  // Numeric chain ID
-	chainKey string // Optional identifier for the chain, e.g., "bsc", "eth", etc.
-	rpcURL   string // Optional RPC endpoint for fetching additional log data
+	chainKey string // Optional identifier for the chain, e.g. "bsc", "eth"
+	rpcURL   string // Optional RPC endpoint for pulling logs from block receipts
 }
 
-// NewBlockscoutProvider creates a new BlockscoutProvider instance with the specified configuration.
-// The baseURL will be trimmed of trailing slashes.
+// NewBlockscoutProvider returns a new BlockscoutProvider.
+// Trailing slashes are trimmed from baseURL for consistency.
 func NewBlockscoutProvider(baseURL string, chainID int64, chainKey, rpcURL string) *BlockscoutProvider {
 	logger.Log.Info().
 		Str("baseURL", baseURL).
 		Str("rpcURL", rpcURL).
-		Msg("Initializing new BlockscoutProvider")
+		Msg("Initializing BlockscoutProvider")
+
 	return &BlockscoutProvider{
 		baseURL:  strings.TrimRight(baseURL, "/"),
 		chainID:  chainID,
@@ -31,114 +39,115 @@ func NewBlockscoutProvider(baseURL string, chainID int64, chainKey, rpcURL strin
 	}
 }
 
-// GetTransactions concurrently fetches and combines normal transactions, token transfers,
-// internal transactions, and logs for a given address. Logs are used to detect ERC20 approve calls.
-func (t *BlockscoutProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
+// GetTransactions concurrently fetches all relevant data for a single address
+// and returns a unified TransactionResponse.
+func (p *BlockscoutProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
 	logger.Log.Info().
-		Str("chain", t.chainKey).
+		Str("chain", p.chainKey).
 		Str("address", address).
 		Msg("Fetching transactions from Blockscout")
 
 	var (
-		normalTxs    []model.Transaction
-		tokenTxs     []model.Transaction
-		internalTxs  []model.Transaction
-		logsResponse *model.BlockscoutLogResponse
-		logsMap      = make(map[string][]model.BlockscoutLog) // txHash -> logs
+		normalTxs   []model.Transaction
+		tokenTxs    []model.Transaction
+		internalTxs []model.Transaction
+
+		// allLogs holds logs from both the Blockscout logs API and the RPC receipts.
+		allLogs  = make(map[string][]model.BlockscoutLog)
+		rpcLogs  map[string][]model.BlockscoutLog
+		fetchErr error
 	)
 
-	// Concurrently fetch all types of transactions and logs
+	// Launch concurrent fetches.
 	g := new(errgroup.Group)
 
-	// Fetch normal transactions
+	// 1. Normal transactions.
 	g.Go(func() error {
-		respData, err := t.fetchBlockscoutNormalTx(address)
+		resp, err := p.fetchBlockscoutNormalTx(address)
 		if err != nil {
 			return err
 		}
-		normalTxs = t.transformBlockscoutNormalTx(respData, address, nil)
+		normalTxs = p.transformBlockscoutNormalTx(resp, address, nil)
 		return nil
 	})
 
-	// Fetch token transfers
+	// 2. Token transfers.
 	g.Go(func() error {
-		respData, err := t.fetchBlockscoutTokenTransfers(address)
+		resp, err := p.fetchBlockscoutTokenTransfers(address)
 		if err != nil {
 			return err
 		}
-		tokenTxs = t.transformBlockscoutTokenTransfers(respData, address)
+		tokenTxs = p.transformBlockscoutTokenTransfers(resp, address)
 		return nil
 	})
 
-	// Fetch internal transactions
+	// 3. Internal transactions.
 	g.Go(func() error {
-		respData, err := t.fetchBlockscoutInternalTx(address)
+		resp, err := p.fetchBlockscoutInternalTx(address)
 		if err != nil {
 			return err
 		}
-		internalTxs = t.transformBlockscoutInternalTx(respData, address)
+		internalTxs = p.transformBlockscoutInternalTx(resp, address)
 		return nil
 	})
 
-	// Fetch logs for approval detection
+	// 4. Logs from Blockscout “/logs” endpoint.
 	g.Go(func() error {
-		var err error
-		logsResponse, err = t.fetchBlockscoutLogs(address)
+		resp, err := p.fetchBlockscoutLogs(address)
 		if err != nil {
 			return err
 		}
-		logsMap = t.indexBlockscoutLogsByTxHash(logsResponse)
+		blockscoutLogs := p.indexBlockscoutLogsByTxHash(resp)
+		mergeLogMaps(allLogs, blockscoutLogs)
 		return nil
 	})
 
-	// Wait for all concurrent fetches
+	// Wait for the parallel jobs to finish.
 	if err := g.Wait(); err != nil {
-		logger.Log.Error().
-			Err(err).
-			Str("address", address).
-			Msg("Failed to fetch some Blockscout data")
+		logger.Log.Error().Err(err).Msg("Failed fetching Blockscout data")
 		return nil, err
 	}
 
-	// Optionally enrich normal transactions using RPC receipts if rpcURL is provided
-	if len(normalTxs) > 0 && t.rpcURL != "" {
-		uniqueBlocks := make(map[int64]bool)
+	// --------------------------------------------------------------------
+	// Optional RPC receipts query (requires normalTxs + rpcURL to be present)
+	// --------------------------------------------------------------------
+	if len(normalTxs) > 0 && p.rpcURL != "" {
+		blocks := make(map[int64]struct{}, len(normalTxs))
 		for _, tx := range normalTxs {
-			uniqueBlocks[tx.Height] = true
+			blocks[tx.Height] = struct{}{}
 		}
 
-		rpcLogsMap, err := t.fetchLogsByBlockFromRPC(uniqueBlocks)
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to fetch logs from RPC")
+		rpcLogs, fetchErr = p.fetchLogsByBlockFromRPC(blocks)
+		if fetchErr != nil {
+			// Log the error and continue using only Blockscout logs.
+			logger.Log.Warn().Err(fetchErr).Msg("Failed to fetch RPC logs")
 		} else {
-			normalTxs = t.transformBlockscoutNormalTxWithLogs(normalTxs, rpcLogsMap, address)
+			mergeLogMaps(allLogs, rpcLogs)
 		}
 	}
 
-	// Re-process normal transactions with fetched logs
+	// Inject logs into normal transactions (approve detection, etc.).
 	if len(normalTxs) > 0 {
-		normalTxs = t.transformBlockscoutNormalTxWithLogs(normalTxs, logsMap, address)
+		normalTxs = p.transformBlockscoutNormalTxWithLogs(normalTxs, allLogs, address)
 	}
 
-	// Combine all transactions
-	allTransactions := append(normalTxs, tokenTxs...)
-	allTransactions = append(allTransactions, internalTxs...)
+	// Aggregate and return all transactions.
+	allTxs := append(normalTxs, tokenTxs...)
+	allTxs = append(allTxs, internalTxs...)
 
 	logger.Log.Info().
 		Int("normal_count", len(normalTxs)).
 		Int("token_count", len(tokenTxs)).
 		Int("internal_count", len(internalTxs)).
-		Int("total_transactions", len(allTransactions)).
-		Str("chain", t.chainKey).
+		Int("total_transactions", len(allTxs)).
+		Str("chain", p.chainKey).
 		Str("address", address).
-		Msg("Successfully fetched and merged all Blockscout transactions")
+		Msg("Successfully fetched and merged Blockscout transactions")
 
 	return &model.TransactionResponse{
 		Result: struct {
 			Transactions []model.Transaction `json:"transactions"`
-		}{
-			Transactions: allTransactions,
-		},
-		Id: int(t.chainID),
+		}{Transactions: allTxs},
+		Id: int(p.chainID),
 	}, nil
 }

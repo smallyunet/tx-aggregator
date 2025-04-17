@@ -71,8 +71,11 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 		unixTime := parseBlockscoutTimestampToUnix(tx.Timestamp)
 
 		// Convert gas limit/used/price
-		gasUsed := tx.GasUsed
-		gasLimit := parseStringToInt64OrDefault(tx.GasLimit, 0)
+		amount, _ := NormalizeNumericString(tx.Value)
+		gasUsed, _ := NormalizeNumericString(tx.GasUsed)
+		gasLimit, _ := NormalizeNumericString(tx.GasLimit)
+		gasPrice, _ := NormalizeNumericString(tx.GasPrice)
+		nonce, _ := NormalizeNumericString(strconv.FormatInt(tx.Nonce, 10))
 
 		transactions = append(transactions, model.Transaction{
 			ChainID:          t.chainID,
@@ -83,11 +86,11 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 			FromAddress:      tx.From.Hash,
 			ToAddress:        tx.To.Hash,
 			TokenAddress:     "",
-			Amount:           tx.Value, // In Wei or subunits
-			GasUsed:          gasUsed,  // Keep as string
+			Amount:           amount,  // In Wei or subunits
+			GasUsed:          gasUsed, // Keep as string
 			GasLimit:         gasLimit,
-			GasPrice:         tx.GasPrice, // keep as string
-			Nonce:            strconv.FormatInt(tx.Nonce, 10),
+			GasPrice:         gasPrice, // keep as string
+			Nonce:            nonce,
 			Type:             model.TxTypeUnknown,  // 0 = normal transfer
 			CoinType:         model.CoinTypeNative, // 1 = native
 			TokenDisplayName: "",

@@ -42,7 +42,7 @@ func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.Blocksc
 
 // fetchLogsByBlockFromRPC makes a batch request to the RPC node: eth_getBlockReceipts for each block number
 // and returns a map of txHash => []BlockscoutLog
-func (t *BlockscoutProvider) fetchLogsByBlockFromRPC(blocks map[int64]bool) (map[string][]model.BlockscoutLog, error) {
+func (t *BlockscoutProvider) fetchLogsByBlockFromRPC(blocks map[int64]struct{}) (map[string][]model.BlockscoutLog, error) {
 	if len(blocks) == 0 {
 		return nil, nil
 	}
