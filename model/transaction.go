@@ -4,21 +4,22 @@ package model
 type TransactionType string
 
 type Transaction struct {
-	ChainID      int64  `json:"chainId"`
-	TokenID      int64  `json:"tokenId"`
-	State        int    `json:"state"`
-	Height       int64  `json:"height"`
-	Hash         string `json:"hash"`
-	TxIndex      int64  `json:"txIndex"`
-	BlockHash    string `json:"blockHash"`
-	FromAddress  string `json:"fromAddress"`
-	ToAddress    string `json:"toAddress"`
-	TokenAddress string `json:"tokenAddress"`
-	Amount       string `json:"amount"`
-	GasUsed      string `json:"gasUsed"`
-	GasLimit     string `json:"gasLimit"`
-	GasPrice     string `json:"gasPrice"`
-	Nonce        string `json:"nonce"`
+	ServerChainName string `json:"serverChainName"`
+	ChainID         int64  `json:"chainId"`
+	TokenID         int64  `json:"tokenId"`
+	State           int    `json:"state"`
+	Height          int64  `json:"height"`
+	Hash            string `json:"hash"`
+	TxIndex         int64  `json:"txIndex"`
+	BlockHash       string `json:"blockHash"`
+	FromAddress     string `json:"fromAddress"`
+	ToAddress       string `json:"toAddress"`
+	TokenAddress    string `json:"tokenAddress"`
+	Amount          string `json:"amount"`
+	GasUsed         string `json:"gasUsed"`
+	GasLimit        string `json:"gasLimit"`
+	GasPrice        string `json:"gasPrice"`
+	Nonce           string `json:"nonce"`
 
 	// 0: transfer, 1: approve
 	Type int `json:"type"`

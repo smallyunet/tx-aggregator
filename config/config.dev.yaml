@@ -17,16 +17,16 @@ ankr:
   api_key: 15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65  # Ankr API key for authentication
   url: https://rpc.ankr.com/multichain  # Ankr RPC endpoint URL
   request_blockchains:  # List of supported blockchain networks
-    - bsc
     - eth
+    - bsc
     - polygon
-    - avalanche
+    - base
   request_page_size: 1000  # Number of records per API request
 
 # Blockscout providers (multiple chain support)
 blockscout:
   - url: https://api.tantin.com/api/v2
-    chain_name: tantin
+    chain_name: TTX
     rpc_url: https://rpc.tantin.com
     request_page_size: 1000
 
@@ -44,8 +44,8 @@ response:
 
 # Chain ID mapping for different blockchain networks
 chain_ids:
-  eth: 1  # Ethereum mainnet
-  bsc: 56  # Binance Smart Chain
-  polygon: 137  # Polygon (Matic)
-  avalanche: 43114  # Avalanche C-Chain
-  tantin: 202502 # Tantin chain ID
+  ETH: 1        # Ethereum mainnet
+  BSC: 56       # Binance Smart Chain
+  POL: 137      # Polygon (Matic)
+  BASE: 8453    # Base Mainnet
+  TTX: 202502   # Tantin chain ID

@@ -56,7 +56,7 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(resp *model.AnkrTokenTransfer
 
 	var transactions []model.Transaction
 	for _, tr := range resp.Result.Transfers {
-		chainID := config.ChainIDByName(tr.Blockchain)
+		chainID, _ := config.ChainIDByName(tr.Blockchain)
 
 		tranType := model.TransTypeOut // default to outgoing
 		if strings.EqualFold(tr.ToAddress, address) {

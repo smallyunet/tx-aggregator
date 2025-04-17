@@ -50,9 +50,9 @@ func main() {
 	// Blockscout
 	logger.Log.Info().Msg("Adding Blockscout providers...")
 	for _, bs := range config.AppConfig.Blockscout {
-		chainID, exists := config.AppConfig.ChainIDs[bs.ChainName]
-		if !exists {
-			logger.Log.Warn().
+		chainID, err := config.ChainIDByName(bs.ChainName)
+		if err != nil {
+			logger.Log.Error().
 				Str("chain_name", bs.ChainName).
 				Msg("Chain ID not found for Blockscout provider, skipping...")
 			continue

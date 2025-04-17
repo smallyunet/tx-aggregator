@@ -3,6 +3,7 @@ package usecase
 import (
 	"sort"
 	"strings"
+	"tx-aggregator/config"
 	"tx-aggregator/model"
 )
 
@@ -75,15 +76,6 @@ func FilterTransactionsByChainIDs(resp *model.TransactionResponse, chainIDs []in
 	return resp
 }
 
-// LimitTransactions limits the number of transactions to a maximum count.
-func LimitTransactions(resp *model.TransactionResponse, max int) *model.TransactionResponse {
-	txs := resp.Result.Transactions
-	if len(txs) > max {
-		resp.Result.Transactions = txs[:max]
-	}
-	return resp
-}
-
 // SortTransactionResponseByHeightAndIndex sorts transactions by block height and txIndex.
 // If heights are the same, it sorts by txIndex in ascending order.
 func SortTransactionResponseByHeightAndIndex(resp *model.TransactionResponse, ascending bool) {
@@ -107,4 +99,23 @@ func SortTransactionResponseByHeightAndIndex(resp *model.TransactionResponse, as
 		}
 		return txI.Height > txJ.Height
 	})
+}
+
+// LimitTransactions limits the number of transactions to a maximum count.
+func LimitTransactions(resp *model.TransactionResponse, max int) *model.TransactionResponse {
+	txs := resp.Result.Transactions
+	if len(txs) > max {
+		resp.Result.Transactions = txs[:max]
+	}
+	return resp
+}
+
+// SetServerChainNames sets the ServerChainName field for each transaction
+// based on the chain ID using the configured chain name mappings.
+func SetServerChainNames(resp *model.TransactionResponse) *model.TransactionResponse {
+	for i, tx := range resp.Result.Transactions {
+		name, _ := config.ChainNameByID(tx.ChainID)
+		resp.Result.Transactions[i].ServerChainName = name
+	}
+	return resp
 }

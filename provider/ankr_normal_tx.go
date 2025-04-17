@@ -58,7 +58,7 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 
 	var transactions []model.Transaction
 	for _, tx := range resp.Result.Transactions {
-		chainID := config.ChainIDByName(tx.Blockchain)
+		chainID, _ := config.ChainIDByName(tx.Blockchain)
 		height := parseStringToInt64OrDefault(tx.BlockNumber, 0)
 		states := parseStringToInt64OrDefault(tx.Status, 0)
 		timestamp := parseStringToInt64OrDefault(tx.Timestamp, 0)

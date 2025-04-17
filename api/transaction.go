@@ -10,10 +10,21 @@ import (
 	"tx-aggregator/usecase"
 )
 
+// getInsensitiveQuery retrieves the query parameter value regardless of the case
+func getInsensitiveQuery(ctx *fiber.Ctx, key string) string {
+	queryParams := ctx.Queries() // map[string]string
+	for k, v := range queryParams {
+		if strings.EqualFold(k, key) {
+			return v
+		}
+	}
+	return ""
+}
+
 // parseTransactionQueryParams parses and validates query parameters from the request
 // Returns TransactionQueryParams struct and error if validation fails
 func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams, error) {
-	address := ctx.Query("address")
+	address := getInsensitiveQuery(ctx, "address")
 	if address == "" {
 		return nil, fmt.Errorf("address parameter is required")
 	} else if !isValidEthereumAddress(address) {
@@ -21,9 +32,8 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams,
 	}
 
 	// Get chainNames from query, e.g., "eth,bsc"
-	chainNamesParam := ctx.Query("chainName")
+	chainNamesParam := getInsensitiveQuery(ctx, "chainName")
 	var chainIDs []int64
-
 	if chainNamesParam == "" {
 		logger.Log.Debug().Msg("No chain names specified, using all configured blockchains")
 		// Use all blockchains if not specified
@@ -32,17 +42,27 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams,
 		}
 	} else {
 		logger.Log.Debug().Str("chain_names", chainNamesParam).Msg("Processing specified chain names")
+
 		// Split by comma and map to chain IDs
 		chainNames := strings.Split(chainNamesParam, ",")
+		var unknownChainNames []string
+
 		for _, name := range chainNames {
 			name = strings.TrimSpace(name)
-			if id := config.ChainIDByName(name); id != 0 {
+			if id, err := config.ChainIDByName(name); err == nil {
 				chainIDs = append(chainIDs, id)
+			} else {
+				unknownChainNames = append(unknownChainNames, name)
 			}
+		}
+
+		// Return error if any chain names are not recognized
+		if len(unknownChainNames) > 0 {
+			return nil, fmt.Errorf("unknown chain names: %s", strings.Join(unknownChainNames, ", "))
 		}
 	}
 
-	tokenAddressParam := strings.ToLower(ctx.Query("tokenAddress"))
+	tokenAddressParam := strings.ToLower(getInsensitiveQuery(ctx, "tokenAddress"))
 	if tokenAddressParam != "" && !isValidEthereumAddress(tokenAddressParam) && tokenAddressParam != model.NativeTokenName {
 		return nil, fmt.Errorf("invalid token address: %s", tokenAddressParam)
 	}
@@ -110,6 +130,10 @@ func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams)
 		}
 	}
 
+	logger.Log.Info().
+		Int("cached_transactions", len(resp.Result.Transactions)).
+		Msg("Successfully fetched transactions from provider")
+
 	// Filter transactions by chain ID
 	resp = usecase.FilterTransactionsByChainIDs(resp, params.ChainIDs)
 	logger.Log.Info().
@@ -132,7 +156,7 @@ func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams)
 		}
 	}
 
-	// ✅ Sort and limit transactions regardless of source
+	// Sort and limit transactions regardless of source
 	usecase.SortTransactionResponseByHeightAndIndex(resp, true)
 	logger.Log.Info().
 		Int("sorted_transactions", len(resp.Result.Transactions)).
@@ -142,6 +166,11 @@ func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams)
 	logger.Log.Info().
 		Int("limited_transactions", len(resp.Result.Transactions)).
 		Msg("Applied transaction limit")
+
+	resp = usecase.SetServerChainNames(resp)
+	logger.Log.Info().
+		Int("server_chain_names_set", len(resp.Result.Transactions)).
+		Msg("Set server chain names for transactions")
 
 	resp.Code = model.CodeSuccess
 	resp.Message = model.GetMessageByCode(model.CodeSuccess)
