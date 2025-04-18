@@ -125,7 +125,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 	}
 
 	// Patch tokenTxs with gas info from normalTxs
-	tokenTxs = PatchTokenTransactionsWithGasInfo(tokenTxs, normalTxs)
+	tokenTxs = PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
 
 	// Aggregate and return all transactions.
 	allTxs := append(normalTxs, tokenTxs...)

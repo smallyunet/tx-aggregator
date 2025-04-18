@@ -83,7 +83,7 @@ func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionRespon
 	}
 
 	// Patch token transfers using matching normal transactions
-	tokenTxs = PatchTokenTransactionsWithGasInfo(tokenTxs, normalTxs)
+	tokenTxs = PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
 
 	// Merge the final results
 	transactions := append(normalTxs, tokenTxs...)

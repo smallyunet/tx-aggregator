@@ -4,5 +4,5 @@ package model
 type TransactionQueryParams struct {
 	Address      string
 	TokenAddress string
-	ChainIDs     []int64
+	ChainNames   []string
 }

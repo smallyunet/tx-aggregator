@@ -12,10 +12,11 @@ type Config struct {
 	} `mapstructure:"redis"`
 
 	Ankr struct {
-		APIKey             string   `mapstructure:"api_key"`
-		URL                string   `mapstructure:"url"`
-		RequestBlockchains []string `mapstructure:"request_blockchains"`
-		RequestPageSize    int      `mapstructure:"request_page_size"`
+		APIKey             string           `mapstructure:"api_key"`
+		URL                string           `mapstructure:"url"`
+		RequestBlockchains []string         `mapstructure:"request_blockchains"`
+		RequestPageSize    int              `mapstructure:"request_page_size"`
+		ChainIDs           map[string]int64 `mapstructure:"chain_ids"`
 	} `mapstructure:"ankr"`
 
 	Blockscout []BlockscoutConfig `mapstructure:"blockscout"`
@@ -32,7 +33,7 @@ type Config struct {
 		Max int `mapstructure:"max"`
 	} `mapstructure:"response"`
 
-	ChainIDs map[string]int64 `mapstructure:"chain_ids"`
+	ChainNames map[string]int64 `mapstructure:"chain_names"`
 }
 
 // BlockscoutConfig represents a single Blockscout instance configuration.

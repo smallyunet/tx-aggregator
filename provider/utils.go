@@ -138,9 +138,9 @@ func NormalizeNumericString(input string) (string, error) {
 	return input, nil
 }
 
-// PatchTokenTransactionsWithGasInfo updates token transactions with gas-related fields
+// PatchTokenTransactionsWithNormalTxInfo updates token transactions with gas-related fields
 // by looking up matching tx hash from the normal transactions.
-func PatchTokenTransactionsWithGasInfo(
+func PatchTokenTransactionsWithNormalTxInfo(
 	tokenTxs []model.Transaction,
 	normalTxs []model.Transaction,
 ) []model.Transaction {
@@ -157,6 +157,8 @@ func PatchTokenTransactionsWithGasInfo(
 			tokenTxs[i].GasUsed = normal.GasUsed
 			tokenTxs[i].GasPrice = normal.GasPrice
 			tokenTxs[i].Nonce = normal.Nonce
+			tokenTxs[i].State = normal.State
+			tokenTxs[i].BlockHash = normal.BlockHash
 		}
 	}
 	return tokenTxs

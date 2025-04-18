@@ -2,50 +2,30 @@ package cache
 
 import (
 	"fmt"
+	"strings"
 	"tx-aggregator/model"
 )
 
-// formatChainKey generates a cache key for a specific chain with an address prefix
-// Parameters:
-//   - address: The address to use as a prefix
-//   - chainID: The unique identifier of the blockchain
-//
-// Returns:
-//   - string: The formatted cache key for the chain
-func formatChainKey(address string, chainID int64) string {
-	return fmt.Sprintf("%s-%d", address, chainID)
+// formatChainKey generates a cache key for a specific chain with an address prefix.
+// The chain name is converted to lowercase to ensure case-insensitive consistency.
+func formatChainKey(address, chainName string) string {
+	return fmt.Sprintf("%s-%s", strings.ToLower(address), strings.ToLower(chainName))
 }
 
-// formatNativeKey generates a cache key for the native token on a specific chain with an address prefix
-// Parameters:
-//   - address: The address to use as a prefix
-//   - chainID: The unique identifier of the blockchain
-//
-// Returns:
-//   - string: The formatted cache key for the native token
-func formatNativeKey(address string, chainID int64) string {
-	return fmt.Sprintf("%s-%d-%s", address, chainID, model.NativeTokenName)
+// formatNativeKey generates a cache key for the native token on a specific chain with an address prefix.
+// The chain name is converted to lowercase to ensure case-insensitive consistency.
+func formatNativeKey(address, chainName string) string {
+	return fmt.Sprintf("%s-%s-%s", strings.ToLower(address), strings.ToLower(chainName), model.NativeTokenName)
 }
 
-// formatTokenKey generates a cache key for a specific token on a specific chain with an address prefix
-// Parameters:
-//   - address: The address to use as a prefix
-//   - chainID: The unique identifier of the blockchain
-//   - tokenAddr: The address of the token contract
-//
-// Returns:
-//   - string: The formatted cache key for the token
-func formatTokenKey(address string, chainID int64, tokenAddr string) string {
-	return fmt.Sprintf("%s-%d-%s", address, chainID, tokenAddr)
+// formatTokenKey generates a cache key for a specific token on a specific chain with an address prefix.
+// Both address and chainName are normalized to lowercase.
+func formatTokenKey(address, chainName, tokenAddr string) string {
+	return fmt.Sprintf("%s-%s-%s", strings.ToLower(address), strings.ToLower(chainName), strings.ToLower(tokenAddr))
 }
 
-// formatTokenSetKey generates a cache key for the set of tokens on a specific chain with an address prefix
-// Parameters:
-//   - address: The address to use as a prefix
-//   - chainID: The unique identifier of the blockchain
-//
-// Returns:
-//   - string: The formatted cache key for the token set
-func formatTokenSetKey(address string, chainID int64) string {
-	return fmt.Sprintf("%s-%d-tokens", address, chainID)
+// formatTokenSetKey generates a cache key for the set of tokens on a specific chain with an address prefix.
+// The chain name is normalized to lowercase.
+func formatTokenSetKey(address, chainName string) string {
+	return fmt.Sprintf("%s-%s-tokens", strings.ToLower(address), strings.ToLower(chainName))
 }

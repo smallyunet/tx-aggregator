@@ -53,15 +53,16 @@ func FilterTransactionsByCoinType(resp *model.TransactionResponse, coinType int)
 	return resp
 }
 
-// FilterTransactionsByChainIDs filters transactions to only include those with the specified chain IDs.
-func FilterTransactionsByChainIDs(resp *model.TransactionResponse, chainIDs []int64) *model.TransactionResponse {
-	if len(chainIDs) == 0 {
+// FilterTransactionsByChainNames filters transactions to only include those with the specified chain IDs.
+func FilterTransactionsByChainNames(resp *model.TransactionResponse, chainNames []string) *model.TransactionResponse {
+	if len(chainNames) == 0 {
 		return resp
 	}
 
 	// Use a set for fast lookup
-	chainIDSet := make(map[int64]struct{}, len(chainIDs))
-	for _, id := range chainIDs {
+	chainIDSet := make(map[int64]struct{}, len(chainNames))
+	for _, name := range chainNames {
+		id, _ := config.ChainIDByName(name)
 		chainIDSet[id] = struct{}{}
 	}
 

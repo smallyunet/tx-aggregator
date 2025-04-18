@@ -33,24 +33,24 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams,
 
 	// Get chainNames from query, e.g., "eth,bsc"
 	chainNamesParam := getInsensitiveQuery(ctx, "chainName")
-	var chainIDs []int64
+	var chainNames []string
 	if chainNamesParam == "" {
 		logger.Log.Debug().Msg("No chain names specified, using all configured blockchains")
 		// Use all blockchains if not specified
-		for _, id := range config.AppConfig.ChainIDs {
-			chainIDs = append(chainIDs, id)
+		for name, _ := range config.AppConfig.ChainNames {
+			chainNames = append(chainNames, name)
 		}
 	} else {
 		logger.Log.Debug().Str("chain_names", chainNamesParam).Msg("Processing specified chain names")
 
 		// Split by comma and map to chain IDs
-		chainNames := strings.Split(chainNamesParam, ",")
+		chainsParam := strings.Split(chainNamesParam, ",")
 		var unknownChainNames []string
 
-		for _, name := range chainNames {
+		for _, name := range chainsParam {
 			name = strings.TrimSpace(name)
-			if id, err := config.ChainIDByName(name); err == nil {
-				chainIDs = append(chainIDs, id)
+			if _, err := config.ChainIDByName(name); err == nil {
+				chainNames = append(chainNames, name)
 			} else {
 				unknownChainNames = append(unknownChainNames, name)
 			}
@@ -70,13 +70,13 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams,
 	params := &model.TransactionQueryParams{
 		Address:      strings.ToLower(address),
 		TokenAddress: tokenAddressParam,
-		ChainIDs:     chainIDs,
+		ChainNames:   chainNames,
 	}
 
 	logger.Log.Debug().
 		Str("address", params.Address).
 		Str("token_address", params.TokenAddress).
-		Interface("chain_ids", params.ChainIDs).
+		Interface("chain_names", params.ChainNames).
 		Msg("Successfully parsed transaction query parameters")
 
 	return params, nil
@@ -135,7 +135,7 @@ func handleGetTransactions(ctx *fiber.Ctx, params *model.TransactionQueryParams)
 		Msg("Successfully fetched transactions from provider")
 
 	// Filter transactions by chain ID
-	resp = usecase.FilterTransactionsByChainIDs(resp, params.ChainIDs)
+	resp = usecase.FilterTransactionsByChainNames(resp, params.ChainNames)
 	logger.Log.Info().
 		Int("filtered_transactions_by_chain_id", len(resp.Result.Transactions)).
 		Msg("Filtered transactions by chain ID")
