@@ -2,15 +2,13 @@ package config
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"log"
 	"os"
-	"tx-aggregator/model"
-
-	"github.com/spf13/viper"
 )
 
 // AppConfig is the global configuration instance
-var AppConfig model.Config
+var AppConfig Config
 
 func Init() {
 	log.Println("Initializing configuration...")

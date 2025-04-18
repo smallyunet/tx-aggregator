@@ -1,4 +1,4 @@
-package provider
+package blockscout
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
+	"tx-aggregator/provider"
 )
 
 // fetchBlockscoutNormalTx retrieves normal transactions from the Blockscout endpoint:
@@ -13,7 +14,7 @@ import (
 func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.BlockscoutTransactionResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	var result model.BlockscoutTransactionResponse
-	if err := DoHttpRequestWithLogging("GET", "blockscout.normalTx", url, nil, nil, &result); err != nil {
+	if err := provider.DoHttpRequestWithLogging("GET", "blockscout.normalTx", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -47,14 +48,14 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 		}
 
 		// Parse timestamp
-		unixTime := parseBlockscoutTimestampToUnix(tx.Timestamp)
+		unixTime := provider.ParseBlockscoutTimestampToUnix(tx.Timestamp)
 
 		// Normalize values
-		amount, _ := NormalizeNumericString(tx.Value)
-		gasUsed, _ := NormalizeNumericString(tx.GasUsed)
-		gasLimit, _ := NormalizeNumericString(tx.GasLimit)
-		gasPrice, _ := NormalizeNumericString(tx.GasPrice)
-		nonce, _ := NormalizeNumericString(strconv.FormatInt(tx.Nonce, 10))
+		amount, _ := provider.NormalizeNumericString(tx.Value)
+		gasUsed, _ := provider.NormalizeNumericString(tx.GasUsed)
+		gasLimit, _ := provider.NormalizeNumericString(tx.GasLimit)
+		gasPrice, _ := provider.NormalizeNumericString(tx.GasPrice)
+		nonce, _ := provider.NormalizeNumericString(strconv.FormatInt(tx.Nonce, 10))
 
 		// Construct the transaction
 		transaction := model.Transaction{
@@ -113,7 +114,7 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 		for _, lg := range logsForTx {
 			// Our generic detection function:
 			// DetectERC20Event(contractAddress, topics, data)
-			txType, tokenAddr, approveValue := DetectERC20Event(
+			txType, tokenAddr, approveValue := provider.DetectERC20Event(
 				lg.Address.Hash, // the contract address
 				lg.Topics,
 				lg.Data,

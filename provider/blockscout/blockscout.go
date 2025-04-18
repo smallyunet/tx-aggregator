@@ -4,15 +4,17 @@
 // transactions, and logs from a Blockscout‑compatible REST API, and (optionally)
 // extra logs from an RPC endpoint. All comments are in English as requested.
 
-package provider
+package blockscout
 
 import (
 	"fmt"
 	"io"
 	"net/http"
 	"time"
+	"tx-aggregator/config"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
+	"tx-aggregator/provider"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -21,12 +23,12 @@ import (
 // data from a Blockscout‑compatible API.
 type BlockscoutProvider struct {
 	chainID int64 // Numeric chain ID
-	config  model.BlockscoutConfig
+	config  config.BlockscoutConfig
 }
 
 // NewBlockscoutProvider returns a new BlockscoutProvider.
 // Trailing slashes are trimmed from baseURL for consistency.
-func NewBlockscoutProvider(chainID int64, config model.BlockscoutConfig) *BlockscoutProvider {
+func NewBlockscoutProvider(chainID int64, config config.BlockscoutConfig) *BlockscoutProvider {
 	logger.Log.Info().
 		Msg("Initializing BlockscoutProvider")
 
@@ -95,7 +97,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 			return err
 		}
 		blockscoutLogs := p.indexBlockscoutLogsByTxHash(resp)
-		mergeLogMaps(allLogs, blockscoutLogs)
+		provider.MergeLogMaps(allLogs, blockscoutLogs)
 		return nil
 	})
 
@@ -119,7 +121,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 			// Log the error and continue using only Blockscout logs.
 			logger.Log.Warn().Err(fetchErr).Msg("Failed to fetch RPC logs")
 		} else {
-			mergeLogMaps(allLogs, rpcLogs)
+			provider.MergeLogMaps(allLogs, rpcLogs)
 		}
 	}
 
@@ -129,7 +131,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 	}
 
 	// Patch tokenTxs with gas info from normalTxs
-	tokenTxs = PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
+	tokenTxs = provider.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
 
 	// Aggregate and return all transactions.
 	allTxs := append(normalTxs, tokenTxs...)

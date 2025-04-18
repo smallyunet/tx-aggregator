@@ -1,10 +1,11 @@
-package provider
+package blockscout
 
 import (
 	"fmt"
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
+	"tx-aggregator/provider"
 )
 
 // fetchBlockscoutTokenTransfers retrieves token transfers from Blockscout:
@@ -12,7 +13,7 @@ import (
 func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*model.BlockscoutTokenTransferResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/token-transfers?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	var result model.BlockscoutTokenTransferResponse
-	if err := DoHttpRequestWithLogging("GET", "blockscout.tokenTransfers", url, nil, nil, &result); err != nil {
+	if err := provider.DoHttpRequestWithLogging("GET", "blockscout.tokenTransfers", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -38,8 +39,8 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 		}
 
 		// Parse timestamp and decimals
-		unixTime := parseBlockscoutTimestampToUnix(tt.Timestamp)
-		decimals := parseStringToInt64OrDefault(tt.Token.Decimals, 18) // Default to 18 if missing
+		unixTime := provider.ParseBlockscoutTimestampToUnix(tt.Timestamp)
+		decimals := provider.ParseStringToInt64OrDefault(tt.Token.Decimals, 18) // Default to 18 if missing
 
 		// Build transaction object
 		transaction := model.Transaction{

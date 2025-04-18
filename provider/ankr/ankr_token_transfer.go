@@ -1,8 +1,9 @@
-package provider
+package ankr
 
 import (
 	"strings"
 	"tx-aggregator/config"
+	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 )
@@ -59,7 +60,7 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 	var transactions []model.Transaction
 
 	for _, tr := range resp.Result.Transfers {
-		chainID, _ := config.AnkrChainIDByName(tr.Blockchain)
+		chainID, _ := chainmeta.AnkrChainIDByName(tr.Blockchain)
 
 		// Determine transaction direction
 		tranType := model.TransTypeOut

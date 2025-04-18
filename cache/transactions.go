@@ -6,6 +6,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"sync"
 	"time"
+	"tx-aggregator/internal/chainmeta"
 
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
@@ -40,7 +41,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 	for _, tx := range resp.Result.Transactions {
 		chainTxMap[tx.ChainID] = append(chainTxMap[tx.ChainID], tx)
 
-		chainName, err := config.ChainNameByID(tx.ChainID)
+		chainName, err := chainmeta.ChainNameByID(tx.ChainID)
 		if err != nil {
 			logger.Log.Error().Err(err).Int64("chainID", tx.ChainID).Msg("chain name not found")
 			continue
@@ -84,7 +85,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 
 	// Chain‑level sets (address‑chain).
 	for chainID, txs := range chainTxMap {
-		chainName, _ := config.ChainNameByID(chainID)
+		chainName, _ := chainmeta.ChainNameByID(chainID)
 		scheduleJSON(formatChainKey(address, chainName), txs, "chainTx")
 	}
 
@@ -102,7 +103,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 		go func(chainID int64, tmap map[string]struct{}) {
 			defer wg.Done()
 
-			chainName, _ := config.ChainNameByID(chainID)
+			chainName, _ := chainmeta.ChainNameByID(chainID)
 			setKey := formatTokenSetKey(address, chainName)
 
 			// Map → slice.

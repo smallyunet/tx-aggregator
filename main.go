@@ -3,102 +3,83 @@ package main
 import (
 	"fmt"
 	"os"
+	"tx-aggregator/internal/chainmeta"
+
+	"github.com/gofiber/fiber/v2"
 
 	"tx-aggregator/api"
 	"tx-aggregator/cache"
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
 	"tx-aggregator/provider"
+	"tx-aggregator/provider/ankr"
+	"tx-aggregator/provider/blockscout"
 	"tx-aggregator/router"
-
-	"github.com/gofiber/fiber/v2"
+	"tx-aggregator/usecase/transaction"
 )
 
-// main is the entry point of the application
-// It initializes all necessary components and starts the HTTP server
 func main() {
-	// Initialize configuration
-	logger.Log.Info().Msg("Loading configuration...")
+	// Step 1: Load configuration
 	config.Init()
-	logger.Log.Info().Msg("Configuration loaded successfully")
+	logger.Log.Info().Msg("Configuration loaded")
 
-	// Initialize logger
-	logger.Log.Info().Msg("Initializing logger...")
+	// Step 2: Initialize logger
 	logger.Init()
-	logger.Log.Info().Msg("Logger initialized successfully")
+	logger.Log.Info().Msg("Logger initialized")
 
-	// Initialize Redis cache client
-	logger.Log.Info().Msg("Initializing Redis cache client...")
+	// Step 3: Initialize Redis
 	redisCache := cache.NewRedisCache(config.AppConfig.Redis.Addrs, config.AppConfig.Redis.Password)
 	if redisCache == nil {
 		logger.Log.Fatal().Msg("Failed to initialize Redis cache client")
 	}
 	logger.Log.Info().
 		Strs("redis_addresses", config.AppConfig.Redis.Addrs).
-		Msg("Redis cache client initialized successfully")
+		Msg("Redis cache initialized")
 
-	// Initialize datasource providers
+	// Step 4: Initialize data providers
 	var providers []provider.Provider
 
-	// Ankr
-	logger.Log.Info().
-		Str("ankr_url", config.AppConfig.Ankr.URL).
-		Msg("Adding Ankr provider...")
-	providers = append(providers, provider.NewAnkrProvider(config.AppConfig.Ankr.APIKey, config.AppConfig.Ankr.URL))
-	logger.Log.Info().Msg("Ankr provider added successfully")
+	// Ankr provider
+	logger.Log.Info().Str("ankr_url", config.AppConfig.Ankr.URL).Msg("Adding Ankr provider")
+	providers = append(providers, ankr.NewAnkrProvider(config.AppConfig.Ankr.APIKey, config.AppConfig.Ankr.URL))
 
-	// Blockscout
-	logger.Log.Info().Msg("Adding Blockscout providers...")
+	// Blockscout providers
 	for _, bs := range config.AppConfig.Blockscout {
-		chainID, err := config.ChainIDByName(bs.ChainName)
+		chainID, err := chainmeta.ChainIDByName(bs.ChainName)
 		if err != nil {
-			logger.Log.Error().
-				Str("chain_name", bs.ChainName).
-				Msg("Chain ID not found for Blockscout provider, skipping...")
+			logger.Log.Warn().Str("chain_name", bs.ChainName).Msg("Unknown chain name, skipping Blockscout provider")
 			continue
 		}
 		logger.Log.Info().
+			Str("chain_name", bs.ChainName).
 			Str("blockscout_url", bs.URL).
-			Str("chain_name", bs.ChainName).
-			Int64("chain_id", chainID).
-			Msg("Adding Blockscout provider...")
-		providers = append(providers, provider.NewBlockscoutProvider(chainID, bs))
-		logger.Log.Info().
-			Str("chain_name", bs.ChainName).
-			Msg("Blockscout provider added successfully")
+			Msg("Adding Blockscout provider")
+		providers = append(providers, blockscout.NewBlockscoutProvider(chainID, bs))
 	}
 
-	// Initialize multi-provider with Ankr as the primary provider
-	logger.Log.Info().Msg("Initializing multi-provider...")
 	multiProvider := provider.NewMultiProvider(providers...)
 	if multiProvider == nil {
 		logger.Log.Fatal().Msg("Failed to initialize multi-provider")
 	}
-	logger.Log.Info().Msg("Multi-provider initialized successfully")
-	// Initialize API components
-	logger.Log.Info().Msg("Initializing API components...")
-	api.Init(multiProvider, redisCache)
-	logger.Log.Info().Msg("API components initialized successfully")
+	logger.Log.Info().Msg("Multi-provider initialized")
 
-	// Create new Fiber application
-	logger.Log.Info().Msg("Creating new Fiber application...")
+	// Step 5: Initialize usecase service
+	txService := transaction.NewService(redisCache, multiProvider)
+
+	// Step 6: Initialize handler
+	txHandler := api.NewTransactionHandler(txService)
+
+	// Step 7: Create HTTP server
 	app := fiber.New()
+	router.SetupRoutes(app, txHandler)
+	logger.Log.Info().Msg("Routes configured")
 
-	// Setup routes
-	logger.Log.Info().Msg("Setting up routes...")
-	router.SetupRoutes(app)
-	logger.Log.Info().Msg("Routes setup completed successfully")
-
-	// Start the server
+	// Step 8: Start server
 	port := config.AppConfig.Server.Port
-	logger.Log.Info().
-		Int("port", port).
-		Msg("Starting server...")
+	logger.Log.Info().Int("port", port).Msg("Starting HTTP server")
 
 	if err := app.Listen(fmt.Sprintf(":%d", port)); err != nil {
-		logger.Log.Error().
-			Err(err).
-			Msg("Failed to start server")
+		logger.Log.Error().Err(err).Msg("Failed to start server")
 		os.Exit(1)
 	}
 }

@@ -1,9 +1,9 @@
-package usecase
+package transaction
 
 import (
 	"sort"
 	"strings"
-	"tx-aggregator/config"
+	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/model"
 )
 
@@ -62,7 +62,7 @@ func FilterTransactionsByChainNames(resp *model.TransactionResponse, chainNames 
 	// Use a set for fast lookup
 	chainIDSet := make(map[int64]struct{}, len(chainNames))
 	for _, name := range chainNames {
-		id, _ := config.ChainIDByName(name)
+		id, _ := chainmeta.ChainIDByName(name)
 		chainIDSet[id] = struct{}{}
 	}
 
@@ -115,7 +115,7 @@ func LimitTransactions(resp *model.TransactionResponse, max int) *model.Transact
 // based on the chain ID using the configured chain name mappings.
 func SetServerChainNames(resp *model.TransactionResponse) *model.TransactionResponse {
 	for i, tx := range resp.Result.Transactions {
-		name, _ := config.ChainNameByID(tx.ChainID)
+		name, _ := chainmeta.ChainNameByID(tx.ChainID)
 		resp.Result.Transactions[i].ServerChainName = name
 	}
 	return resp

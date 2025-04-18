@@ -10,10 +10,6 @@ import (
 	"tx-aggregator/model"
 )
 
-// -----------------------------------------------------------------------------
-// Utility Functions
-// -----------------------------------------------------------------------------
-
 // DetectERC20Event checks if the (address, topics, data) indicate
 // an ERC-20 Transfer or Approval event.
 //
@@ -68,9 +64,9 @@ func DetectERC20TypeForAnkr(logs []model.AnkrLogEntry) (typ int, tokenAddress, a
 	return model.TxTypeUnknown, "", ""
 }
 
-// parseStringToInt64OrDefault converts a string to int64, supporting hex with "0x" prefix
+// ParseStringToInt64OrDefault converts a string to int64, supporting hex with "0x" prefix
 // Returns the default value if parsing fails
-func parseStringToInt64OrDefault(s string, def int64) int64 {
+func ParseStringToInt64OrDefault(s string, def int64) int64 {
 	var val int64
 	var err error
 
@@ -91,8 +87,8 @@ func parseStringToInt64OrDefault(s string, def int64) int64 {
 	return val
 }
 
-// parseBlockscoutTimestampToUnix parses a timestamp like "2025-04-16T06:45:02.000000Z" into an int64 (Unix epoch)
-func parseBlockscoutTimestampToUnix(ts string) int64 {
+// ParseBlockscoutTimestampToUnix parses a timestamp like "2025-04-16T06:45:02.000000Z" into an int64 (Unix epoch)
+func ParseBlockscoutTimestampToUnix(ts string) int64 {
 	parsed, err := time.Parse(time.RFC3339Nano, ts)
 	if err != nil {
 		logger.Log.Warn().
@@ -104,9 +100,9 @@ func parseBlockscoutTimestampToUnix(ts string) int64 {
 	return parsed.Unix()
 }
 
-// mergeLogMaps appends logs from src into dst (keyed by tx hash).
+// MergeLogMaps appends logs from src into dst (keyed by tx hash).
 // Duplicate logs are allowed; add deduplication here if required.
-func mergeLogMaps(dst, src map[string][]model.BlockscoutLog) {
+func MergeLogMaps(dst, src map[string][]model.BlockscoutLog) {
 	for hash, logs := range src {
 		dst[hash] = append(dst[hash], logs...)
 	}

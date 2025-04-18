@@ -1,10 +1,12 @@
-package provider
+package ankr
 
 import (
 	"strings"
 	"tx-aggregator/config"
+	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
+	"tx-aggregator/provider"
 )
 
 // GetTransactionsByAddress retrieves normal transactions from Ankr for the given address
@@ -58,28 +60,28 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 	var transactions []model.Transaction
 
 	for _, tx := range resp.Result.Transactions {
-		chainID, _ := config.AnkrChainIDByName(tx.Blockchain)
-		height := parseStringToInt64OrDefault(tx.BlockNumber, 0)
-		timestamp := parseStringToInt64OrDefault(tx.Timestamp, 0)
-		txIndex := parseStringToInt64OrDefault(tx.TransactionIndex, 0)
+		chainID, _ := chainmeta.AnkrChainIDByName(tx.Blockchain)
+		height := provider.ParseStringToInt64OrDefault(tx.BlockNumber, 0)
+		timestamp := provider.ParseStringToInt64OrDefault(tx.Timestamp, 0)
+		txIndex := provider.ParseStringToInt64OrDefault(tx.TransactionIndex, 0)
 
 		// Determine transaction state
 		var state int
-		if parseStringToInt64OrDefault(tx.Status, 0) == model.TxStateSuccess {
+		if provider.ParseStringToInt64OrDefault(tx.Status, 0) == model.TxStateSuccess {
 			state = model.TxStateSuccess
 		} else {
 			state = model.TxStateFail
 		}
 
 		// Normalize values
-		amount, _ := NormalizeNumericString(tx.Value)
-		gasLimit, _ := NormalizeNumericString(tx.Gas)
-		gasUsed, _ := NormalizeNumericString(tx.GasUsed)
-		gasPrice, _ := NormalizeNumericString(tx.GasPrice)
-		nonce, _ := NormalizeNumericString(tx.Nonce)
+		amount, _ := provider.NormalizeNumericString(tx.Value)
+		gasLimit, _ := provider.NormalizeNumericString(tx.Gas)
+		gasUsed, _ := provider.NormalizeNumericString(tx.GasUsed)
+		gasPrice, _ := provider.NormalizeNumericString(tx.GasPrice)
+		nonce, _ := provider.NormalizeNumericString(tx.Nonce)
 
 		// Detect ERC20 type and approve value
-		txType, tokenAddr, approveValue := DetectERC20TypeForAnkr(tx.Logs)
+		txType, tokenAddr, approveValue := provider.DetectERC20TypeForAnkr(tx.Logs)
 		approveShow := ""
 		if txType == model.TxTypeApprove {
 			approveShow = approveValue
