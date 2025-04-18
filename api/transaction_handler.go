@@ -9,11 +9,11 @@ import (
 
 // TransactionHandler handles HTTP requests related to transaction queries.
 type TransactionHandler struct {
-	service *transactionUsecase.Service
+	service transactionUsecase.ServiceInterface
 }
 
 // NewTransactionHandler creates a new instance of TransactionHandler with the provided service.
-func NewTransactionHandler(service *transactionUsecase.Service) *TransactionHandler {
+func NewTransactionHandler(service transactionUsecase.ServiceInterface) *TransactionHandler {
 	return &TransactionHandler{service: service}
 }
 
