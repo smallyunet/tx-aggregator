@@ -7,6 +7,10 @@
 package provider
 
 import (
+	"fmt"
+	"io"
+	"net/http"
+	"time"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 
@@ -146,4 +150,53 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 		}{Transactions: allTxs},
 		Id: int(p.chainID),
 	}, nil
+}
+
+// doLoggedHttpGet sends a GET request to the given URL, logs duration and errors, and returns the response body.
+func doLoggedHttpGet(label string, url string) ([]byte, error) {
+	start := time.Now()
+	resp, err := http.Get(url)
+	duration := time.Since(start)
+
+	if err != nil {
+		logger.Log.Error().
+			Str("label", label).
+			Str("url", url).
+			Dur("duration", duration).
+			Err(err).
+			Msg("Failed to send GET request")
+		return nil, fmt.Errorf("http GET failed for %s: %w", label, err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Log.Error().
+			Str("label", label).
+			Str("url", url).
+			Dur("duration", duration).
+			Err(err).
+			Msg("Failed to read response body")
+		return nil, fmt.Errorf("read body failed for %s: %w", label, err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		logger.Log.Error().
+			Str("label", label).
+			Str("url", url).
+			Int("status_code", resp.StatusCode).
+			Dur("duration", duration).
+			Msg("Non-200 response")
+		return nil, fmt.Errorf("non-200 status for %s: %d", label, resp.StatusCode)
+	}
+
+	logger.Log.Info().
+		Str("label", label).
+		Str("url", url).
+		Int("status_code", resp.StatusCode).
+		Int("response_size", len(body)).
+		Dur("duration", duration).
+		Msg("Successful GET request")
+
+	return body, nil
 }

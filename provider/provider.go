@@ -1,7 +1,9 @@
 package provider
 
 import (
-	"sync"
+	"context"
+	"time"
+	"tx-aggregator/config"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 )
@@ -20,72 +22,51 @@ type MultiProvider struct {
 	providers []Provider
 }
 
-// GetTransactions concurrently fetches transactions from all registered providers.
-// It aggregates successful results and returns a combined response.
-// If all providers fail, it returns the last encountered error.
+// GetTransactions fetches from every provider concurrently and merges results
 func (m *MultiProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
-	logger.Log.Info().Str("address", address).Msg("Fetching transactions from multiple providers")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.AppConfig.Providers.RequestTimeout)*time.Second)
+	defer cancel()
 
-	var wg sync.WaitGroup // WaitGroup to wait for all goroutines
-	var mu sync.Mutex     // Mutex to protect shared resources
-	var allTransactions []model.Transaction
-	var lastErr error // Used to record the last error in case all fail
+	resCh := make(chan []model.Transaction, len(m.providers))
+	errCh := make(chan error, len(m.providers))
 
-	for i, p := range m.providers {
-		wg.Add(1)
-		// Concurrently execute each provider
-		go func(i int, provider Provider) {
-			defer wg.Done()
-
-			logger.Log.Debug().Int("provider_index", i).Msg("Attempting to fetch from provider")
-
-			res, err := provider.GetTransactions(address)
+	for idx, p := range m.providers {
+		go func(i int, prov Provider) {
+			start := time.Now()
+			resp, err := prov.GetTransactions(address)
+			cost := time.Since(start)
 			if err != nil {
-				logger.Log.Warn().
-					Err(err).
-					Int("provider_index", i).
-					Msg("Provider failed")
-				// Store the last error in case all providers fail
-				mu.Lock()
-				lastErr = err
-				mu.Unlock()
+				logger.Log.Warn().Err(err).Int("provider_index", i).
+					Dur("cost", cost).Msg("Provider failed")
+				errCh <- err
 				return
 			}
-
-			// If transactions are successfully retrieved, add them to the aggregate slice
-			if res != nil && res.Result.Transactions != nil {
-				transactionCount := len(res.Result.Transactions)
-				logger.Log.Info().
-					Int("provider_index", i).
-					Int("transaction_count", transactionCount).
-					Msg("Successfully fetched transactions from provider")
-
-				mu.Lock()
-				allTransactions = append(allTransactions, res.Result.Transactions...)
-				mu.Unlock()
-			}
-		}(i, p)
+			logger.Log.Info().Dur("cost", cost).Int("provider_index", i).
+				Int("tx_count", len(resp.Result.Transactions)).
+				Msg("Provider finished")
+			resCh <- resp.Result.Transactions
+		}(idx, p)
 	}
 
-	// Wait for all goroutines to finish
-	wg.Wait()
-
-	logger.Log.Info().
-		Int("total_transactions", len(allTransactions)).
-		Str("address", address).
-		Msg("Successfully aggregated transactions from providers")
-
-	// If no transactions were fetched and lastErr is not nil, it means all providers failed
-	if len(allTransactions) == 0 && lastErr != nil {
-		return nil, lastErr
+	var allTxs []model.Transaction
+	for done := 0; done < len(m.providers); done++ {
+		select {
+		case txs := <-resCh:
+			allTxs = append(allTxs, txs...)
+		case <-ctx.Done():
+			return nil, ctx.Err() // global timeout
+		}
 	}
+
+	close(resCh)
+	close(errCh)
 
 	return &model.TransactionResponse{
-		Id: 1, // You can customize this ID
+		Id: 1,
 		Result: struct {
 			Transactions []model.Transaction `json:"transactions"`
 		}{
-			Transactions: allTransactions,
+			Transactions: allTxs,
 		},
 	}, nil
 }

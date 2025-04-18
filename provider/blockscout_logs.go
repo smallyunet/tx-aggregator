@@ -1,12 +1,12 @@
 package provider
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
-	"net/http"
+	"golang.org/x/sync/errgroup"
 	"strconv"
+	"sync"
+	"time"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 )
@@ -15,103 +15,156 @@ import (
 // GET /addresses/{address}/logs
 func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.BlockscoutLogResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/logs?limit=%d", t.config.URL, address, t.config.RequestPageSize)
-	logger.Log.Debug().Str("url", url).Msg("Fetching logs from Blockscout")
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch logs: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("received non-success status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read logs response: %w", err)
-	}
-
 	var result model.BlockscoutLogResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal logs: %w", err)
+	if err := DoHttpRequestWithLogging("GET", "blockscout.logs", url, nil, nil, &result); err != nil {
+		return nil, err
 	}
-
 	return &result, nil
 }
 
-// fetchLogsByBlockFromRPC makes a batch request to the RPC node: eth_getBlockReceipts for each block number
-// and returns a map of txHash => []BlockscoutLog
-func (t *BlockscoutProvider) fetchLogsByBlockFromRPC(blocks map[int64]struct{}) (map[string][]model.BlockscoutLog, error) {
+// fetchLogsByBlockFromRPC makes batched eth_getBlockReceipts requests for the
+// given blocks and returns all logs indexed by txHash.
+//
+// Parameters
+// -----------
+// blocks : map[int64]struct{}
+//
+//	Set of block numbers to query. The keys are the block heights.
+//
+// Returns
+// --------
+// map[string][]model.BlockscoutLog
+//
+//	A map where the key is the transaction hash and the value is the slice
+//	of logs that belong to that transaction.
+//
+// error
+//
+//	Non-nil if any shard fails. Partial results are discarded on error.
+func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(blocks map[int64]struct{}) (map[string][]model.BlockscoutLog, error) {
 	if len(blocks) == 0 {
 		return nil, nil
 	}
 
-	// 1. Construct batch requests
-	var rpcRequests []map[string]interface{}
-	idCount := 1
-	for block := range blocks {
-		hexBlock := "0x" + strconv.FormatInt(block, 16)
-		req := map[string]interface{}{
-			"jsonrpc": "2.0",
-			"id":      idCount,
-			"method":  "eth_getBlockReceipts",
-			"params":  []interface{}{hexBlock},
+	const (
+		batchSize   = 50
+		maxParallel = 4
+	)
+	requestTimeout := time.Duration(p.config.RPCRequestTimeout) * time.Second
+
+	// Internal types for RPC structure
+	type rpcReq struct {
+		JSONRPC string        `json:"jsonrpc"`
+		ID      int           `json:"id"`
+		Method  string        `json:"method"`
+		Params  []interface{} `json:"params"`
+	}
+	type receipt struct {
+		TransactionHash string                `json:"transactionHash"`
+		Logs            []model.BlockscoutLog `json:"logs"`
+	}
+	type rpcResp struct {
+		ID     int       `json:"id"`
+		Result []receipt `json:"result"`
+		Error  *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error,omitempty"`
+	}
+
+	// Group blocks into batches (shards)
+	var shardBlocks [][]int64
+	cur := make([]int64, 0, batchSize)
+	for blk := range blocks {
+		cur = append(cur, blk)
+		if len(cur) == batchSize {
+			shardBlocks = append(shardBlocks, cur)
+			cur = make([]int64, 0, batchSize)
 		}
-		rpcRequests = append(rpcRequests, req)
-		idCount++
+	}
+	if len(cur) > 0 {
+		shardBlocks = append(shardBlocks, cur)
 	}
 
-	reqBody, err := json.Marshal(rpcRequests)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal batch RPC requests: %w", err)
-	}
+	// Prepare result container
+	merged := make(map[string][]model.BlockscoutLog, 1024)
+	var mu sync.Mutex
 
-	// 2. Send HTTP POST request
-	resp, err := http.Post(t.config.RPCURL, "application/json", bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch block receipts from RPC: %w", err)
-	}
-	defer resp.Body.Close()
+	// Launch parallel requests
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	defer cancel()
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("received non-success status code from RPC: %d", resp.StatusCode)
-	}
+	g, ctx := errgroup.WithContext(ctx)
+	sem := make(chan struct{}, maxParallel)
 
-	// 3. Parse batch response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read RPC response: %w", err)
-	}
+	for _, blocks := range shardBlocks {
+		blkCopy := append([]int64(nil), blocks...) // capture range variable
+		sem <- struct{}{}
 
-	var rpcRespList []model.RpcReceiptResponse
-	if err := json.Unmarshal(body, &rpcRespList); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal RPC receipts: %w", err)
-	}
+		g.Go(func() error {
+			defer func() { <-sem }()
 
-	// 4. Organize into txHash => []BlockscoutLog
-	resultMap := make(map[string][]model.BlockscoutLog)
-	for _, blockResp := range rpcRespList {
-		for _, receipt := range blockResp.Result {
-			// Iterate through the logs of this receipt
-			for _, l := range receipt.Logs {
-				// Convert to BlockscoutLog format (only fields that will be used later)
-				tmp := model.BlockscoutLog{
-					Address: model.BlockscoutAddressDetails{
-						Hash: l.Address,
-					},
-					BlockHash:       l.BlockHash,
-					Data:            l.Data,
-					Topics:          l.Topics,
-					TransactionHash: l.TransactionHash,
-				}
-
-				resultMap[l.TransactionHash] = append(resultMap[l.TransactionHash], tmp)
+			// Build the batch JSON-RPC request
+			reqs := make([]rpcReq, 0, len(blkCopy))
+			for i, b := range blkCopy {
+				hexBlock := "0x" + strconv.FormatInt(b, 16)
+				reqs = append(reqs, rpcReq{
+					JSONRPC: "2.0",
+					ID:      i + 1,
+					Method:  "eth_getBlockReceipts",
+					Params:  []interface{}{hexBlock},
+				})
 			}
-		}
+
+			// Perform the HTTP POST using shared utility
+			var rpcResponses []rpcResp
+			if err := DoHttpRequestWithLogging(
+				"POST",
+				fmt.Sprintf("blockscout.rpcReceipts.shard.%d", len(blkCopy)),
+				p.config.RPCURL,
+				reqs,
+				map[string]string{
+					"Content-Type": "application/json",
+				},
+				&rpcResponses,
+			); err != nil {
+				return err
+			}
+
+			// Parse receipts and aggregate logs
+			local := make(map[string][]model.BlockscoutLog, len(rpcResponses)*4)
+			for _, r := range rpcResponses {
+				if r.Error != nil {
+					return fmt.Errorf("rpc error id=%d code=%d: %s", r.ID, r.Error.Code, r.Error.Message)
+				}
+				for _, rc := range r.Result {
+					if len(rc.Logs) > 0 {
+						local[rc.TransactionHash] = append(local[rc.TransactionHash], rc.Logs...)
+					}
+				}
+			}
+
+			// Safe merge to shared result map
+			mu.Lock()
+			for k, v := range local {
+				merged[k] = append(merged[k], v...)
+			}
+			mu.Unlock()
+
+			logger.Log.Debug().
+				Int("blocks", len(blkCopy)).
+				Int("tx_hashes", len(local)).
+				Msg("Fetched logs shard successfully")
+
+			return nil
+		})
 	}
 
-	return resultMap, nil
+	// Wait for all goroutines
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	return merged, nil
 }
 
 // indexBlockscoutLogsByTxHash stores each log in a map keyed by transaction hash.

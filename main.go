@@ -92,10 +92,10 @@ func main() {
 	// Start the server
 	port := config.AppConfig.Server.Port
 	logger.Log.Info().
-		Str("port", port).
+		Int("port", port).
 		Msg("Starting server...")
 
-	if err := app.Listen(fmt.Sprintf(":%s", port)); err != nil {
+	if err := app.Listen(fmt.Sprintf(":%d", port)); err != nil {
 		logger.Log.Error().
 			Err(err).
 			Msg("Failed to start server")

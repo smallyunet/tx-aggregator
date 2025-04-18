@@ -1,10 +1,7 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
 	"strings"
 	"tx-aggregator/logger"
@@ -15,28 +12,10 @@ import (
 // GET /addresses/{address}/transactions
 func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.BlockscoutTransactionResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
-	logger.Log.Debug().Str("url", url).Msg("Fetching normal transactions from Blockscout")
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch normal transactions: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("received non-success status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read normal transactions response: %w", err)
-	}
-
 	var result model.BlockscoutTransactionResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal normal transactions: %w", err)
+	if err := DoHttpRequestWithLogging("GET", "blockscout.normalTx", url, nil, nil, &result); err != nil {
+		return nil, err
 	}
-
 	return &result, nil
 }
 

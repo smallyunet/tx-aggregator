@@ -12,6 +12,9 @@ redis:
     - 10.234.103.75:6379
   password: ""  # Redis authentication password (empty for no password)
 
+providers:
+  request_timeout: 30
+
 # Ankr API configuration for blockchain data
 ankr:
   api_key: 15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65  # Ankr API key for authentication
@@ -32,8 +35,9 @@ ankr:
 blockscout:
   - url: https://api.tantin.com/api/v2
     chain_name: TTX
-    rpc_url: https://rpc.tantin.com
     request_page_size: 1000
+    rpc_url: https://rpc.tantin.com
+    rpc_request_timeout: 8
 
 # Cache configuration
 cache:

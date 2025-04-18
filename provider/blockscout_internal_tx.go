@@ -1,10 +1,7 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
@@ -14,28 +11,10 @@ import (
 // GET /addresses/{address}/internal-transactions
 func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.BlockscoutInternalTxResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/internal-transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
-	logger.Log.Debug().Str("url", url).Msg("Fetching internal transactions from Blockscout")
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch internal transactions: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("received non-success status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read internal transactions response: %w", err)
-	}
-
 	var result model.BlockscoutInternalTxResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal internal transactions: %w", err)
+	if err := DoHttpRequestWithLogging("GET", "blockscout.internalTx", url, nil, nil, &result); err != nil {
+		return nil, err
 	}
-
 	return &result, nil
 }
 

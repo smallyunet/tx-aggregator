@@ -1,12 +1,8 @@
 package provider
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"golang.org/x/sync/errgroup"
-	"io"
-	"net/http"
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
@@ -105,62 +101,10 @@ func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionRespon
 	}, nil
 }
 
-// sendRequest sends a POST request to the Ankr API and decodes the JSON response
-// It handles authentication, request formatting, and error handling
 func (p *AnkrProvider) sendRequest(requestBody interface{}, result interface{}) error {
-	jsonData, err := json.Marshal(requestBody)
-	if err != nil {
-		logger.Log.Error().
-			Err(err).
-			Msg("Failed to marshal request body")
-		return fmt.Errorf("marshal request failed: %w", err)
-	}
-
 	fullURL := fmt.Sprintf("%s/%s", p.url, p.apiKey)
-	logger.Log.Debug().
-		Str("url", fullURL).
-		Msg("Sending request to Ankr API")
-
-	req, err := http.NewRequest("POST", fullURL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		logger.Log.Error().
-			Err(err).
-			Msg("Failed to create HTTP request")
-		return fmt.Errorf("create request failed: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", p.apiKey)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		logger.Log.Error().
-			Err(err).
-			Msg("Failed to send request to Ankr API")
-		return fmt.Errorf("send request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		logger.Log.Error().
-			Int("status_code", resp.StatusCode).
-			Msg("Ankr API returned non-success status code")
-		return fmt.Errorf("ankr api responded with status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Log.Error().
-			Err(err).
-			Msg("Failed to read response body")
-		return fmt.Errorf("read response failed: %w", err)
-	}
-
-	if err := json.Unmarshal(body, result); err != nil {
-		logger.Log.Error().
-			Err(err).
-			Msg("Failed to unmarshal response body")
-		return fmt.Errorf("unmarshal response failed: %w", err)
-	}
-
-	return nil
+	return DoHttpRequestWithLogging("POST", "ankr", fullURL, requestBody, map[string]string{
+		"Content-Type": "application/json",
+		"x-api-key":    p.apiKey,
+	}, result)
 }
