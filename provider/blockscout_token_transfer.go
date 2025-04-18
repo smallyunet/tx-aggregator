@@ -18,44 +18,47 @@ func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*mod
 	return &result, nil
 }
 
-// transformBlockscoutTokenTransfers converts Blockscout token transfers into []model.Transaction
-func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(resp *model.BlockscoutTokenTransferResponse, address string) []model.Transaction {
+// / transformBlockscoutTokenTransfers converts Blockscout token transfers into []model.Transaction.
+func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
+	resp *model.BlockscoutTokenTransferResponse,
+	address string,
+) []model.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
 		logger.Log.Warn().Msg("No token transfers to transform from Blockscout")
 		return nil
 	}
 
 	var transactions []model.Transaction
+
 	for _, tt := range resp.Items {
-		// Transaction direction: Outgoing by default
+		// Determine transaction direction
 		tranType := model.TransTypeOut
 		if strings.EqualFold(tt.To.Hash, address) {
 			tranType = model.TransTypeIn
 		}
 
+		// Parse timestamp and decimals
 		unixTime := parseBlockscoutTimestampToUnix(tt.Timestamp)
-		// Always consider token transfers state = 1 if there's no explicit fail indicator
-		state := 1
+		decimals := parseStringToInt64OrDefault(tt.Token.Decimals, 18) // Default to 18 if missing
 
-		// Parse decimals from token info
-		decimals := parseStringToInt64OrDefault(tt.Token.Decimals, 18) // default 18 if parse fails
-
-		transactions = append(transactions, model.Transaction{
+		// Build transaction object
+		transaction := model.Transaction{
 			ChainID:          t.chainID,
-			State:            state,
+			TokenID:          0,
+			State:            model.TxStateSuccess, // Token transfers are assumed successful
 			Height:           tt.BlockNumber,
 			Hash:             tt.TransactionHash,
 			BlockHash:        tt.BlockHash,
 			FromAddress:      tt.From.Hash,
 			ToAddress:        tt.To.Hash,
 			TokenAddress:     tt.Token.Address,
-			Amount:           tt.Total.Value,       // the raw string in subunits
-			GasUsed:          "",                   // not provided in token transfers
-			GasLimit:         "",                   // not provided
-			GasPrice:         "",                   // not provided
-			Nonce:            "",                   // not provided
-			Type:             model.TxTypeTransfer, // 0 = normal, 1 = approve, etc.
-			CoinType:         model.CoinTypeToken,  // 2 = token
+			Amount:           tt.Total.Value,
+			GasUsed:          "",                   // Not provided
+			GasLimit:         "",                   // Not provided
+			GasPrice:         "",                   // Not provided
+			Nonce:            "",                   // Not provided
+			Type:             model.TxTypeTransfer, // Standard token transfer
+			CoinType:         model.CoinTypeToken,  // Token type
 			TokenDisplayName: tt.Token.Name,
 			Decimals:         decimals,
 			CreatedTime:      unixTime,
@@ -63,11 +66,14 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(resp *model.Block
 			TranType:         tranType,
 			ApproveShow:      "",
 			IconURL:          tt.Token.IconURL,
-		})
+		}
+
+		transactions = append(transactions, transaction)
 	}
 
 	logger.Log.Debug().
 		Int("transformed_count", len(transactions)).
 		Msg("Transformed token transfers from Blockscout")
+
 	return transactions
 }

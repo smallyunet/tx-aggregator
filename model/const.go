@@ -33,3 +33,10 @@ const (
 // NativeDefaultDecimals represents the default number of decimal places
 // for native cryptocurrencies (e.g., 18 decimals for ETH)
 const NativeDefaultDecimals = 18
+
+const (
+	// TxStateSuccess represents a successful transaction
+	TxStateSuccess = 1
+	// TxStateFail represents a failed transaction
+	TxStateFail = 0
+)

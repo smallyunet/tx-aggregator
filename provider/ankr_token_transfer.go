@@ -43,10 +43,12 @@ func (p *AnkrProvider) GetTokenTransfers(address string) (*model.AnkrTokenTransf
 
 // transformAnkrTokenTransfers converts AnkrTokenTransferResponse into a slice of model.Transaction
 // These represent ERC20/BEP20/etc token transfers
-func (a *AnkrProvider) transformAnkrTokenTransfers(resp *model.AnkrTokenTransferResponse, address string) []model.Transaction {
+func (a *AnkrProvider) transformAnkrTokenTransfers(
+	resp *model.AnkrTokenTransferResponse,
+	address string,
+) []model.Transaction {
 	if resp == nil || resp.Result.Transfers == nil {
-		logger.Log.Warn().
-			Msg("No token transfers to transform")
+		logger.Log.Warn().Msg("No token transfers to transform")
 		return nil
 	}
 
@@ -55,43 +57,49 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(resp *model.AnkrTokenTransfer
 		Msg("Transforming token transfers")
 
 	var transactions []model.Transaction
+
 	for _, tr := range resp.Result.Transfers {
 		chainID, _ := config.AnkrChainIDByName(tr.Blockchain)
 
-		tranType := model.TransTypeOut // default to outgoing
+		// Determine transaction direction
+		tranType := model.TransTypeOut
 		if strings.EqualFold(tr.ToAddress, address) {
 			tranType = model.TransTypeIn
 		}
 
-		transactions = append(transactions, model.Transaction{
+		// Construct transaction object
+		transaction := model.Transaction{
 			ChainID:          chainID,
 			TokenID:          0,
-			State:            -1, // not provided by transfer API
+			State:            model.TxStateSuccess, // always mark as success (API limitation)
 			Height:           tr.BlockHeight,
 			Hash:             tr.TransactionHash,
-			BlockHash:        "", // not provided by transfer API
+			BlockHash:        "", // not available from API
 			FromAddress:      tr.FromAddress,
 			ToAddress:        tr.ToAddress,
 			TokenAddress:     tr.ContractAddress,
 			Amount:           tr.Value,
-			GasUsed:          "",                   // not provided by transfer API
-			GasLimit:         "",                   // not available
-			GasPrice:         "",                   // not available
-			Nonce:            "",                   // not available
-			Type:             model.TxTypeTransfer, // default to transfer
-			CoinType:         model.CoinTypeToken,  // 2 = token
+			GasUsed:          "", // not provided
+			GasLimit:         "", // not available
+			GasPrice:         "", // not available
+			Nonce:            "", // not available
+			Type:             model.TxTypeTransfer,
+			CoinType:         model.CoinTypeToken,
 			TokenDisplayName: tr.TokenName,
 			Decimals:         tr.TokenDecimals,
 			CreatedTime:      tr.Timestamp,
 			ModifiedTime:     tr.Timestamp,
 			TranType:         tranType,
 			ApproveShow:      "",
-			IconURL:          tr.Thumbnail, // optional logo/image
-		})
+			IconURL:          tr.Thumbnail,
+		}
+
+		transactions = append(transactions, transaction)
 	}
 
 	logger.Log.Debug().
 		Int("transformed_count", len(transactions)).
 		Msg("Successfully transformed token transfers")
+
 	return transactions
 }

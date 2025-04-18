@@ -19,23 +19,29 @@ func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.B
 }
 
 // transformBlockscoutInternalTx converts internal transaction data into []model.Transaction.
-// If you only want to store minimal details, this is an example approach.
-func (t *BlockscoutProvider) transformBlockscoutInternalTx(resp *model.BlockscoutInternalTxResponse, address string) []model.Transaction {
+// This version captures basic transfer data without logs or deep inspection.
+func (t *BlockscoutProvider) transformBlockscoutInternalTx(
+	resp *model.BlockscoutInternalTxResponse,
+	address string,
+) []model.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
 		logger.Log.Warn().Msg("No internal transactions to transform from Blockscout")
 		return nil
 	}
 
 	var transactions []model.Transaction
+
 	for _, itx := range resp.Items {
-		// For internal tx success/fail
-		state := 0
+		// Determine transaction success state
+		state := model.TxStateFail
 		if itx.Success {
-			state = 1
+			state = model.TxStateSuccess
 		}
 
+		// Parse timestamp to Unix time
 		unixTime := parseBlockscoutTimestampToUnix(itx.Timestamp)
 
+		// Safely extract from/to addresses
 		fromHash := ""
 		toHash := ""
 		if itx.From != nil {
@@ -45,30 +51,33 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(resp *model.Blockscou
 			toHash = itx.To.Hash
 		}
 
-		// Transaction direction: Outgoing by default
+		// Determine transaction direction
 		tranType := model.TransTypeOut
 		if strings.EqualFold(toHash, address) {
 			tranType = model.TransTypeIn
 		}
 
+		// Normalize gas limit (if provided)
 		gasLimit, _ := NormalizeNumericString(itx.GasLimit)
 
-		transactions = append(transactions, model.Transaction{
+		// Construct transaction object
+		transaction := model.Transaction{
 			ChainID:          t.chainID,
+			TokenID:          0,
 			State:            state,
 			Height:           itx.BlockNumber,
-			Hash:             itx.TransactionHash, // internal tx uses outer transaction's hash
-			BlockHash:        "",                  // not provided by Blockscout for internal
+			Hash:             itx.TransactionHash, // Uses outer transaction hash
+			BlockHash:        "",                  // Not available for internal tx
 			FromAddress:      fromHash,
 			ToAddress:        toHash,
 			TokenAddress:     "",
 			Amount:           itx.Value,
-			GasUsed:          "", // not provided in internal tx
+			GasUsed:          "", // Not provided
 			GasLimit:         gasLimit,
 			GasPrice:         "",
 			Nonce:            "",
-			Type:             model.TxTypeInternal, // can define a custom type code if desired
-			CoinType:         model.CoinTypeNative, // typically native if transferring
+			Type:             model.TxTypeInternal, // Internal call
+			CoinType:         model.CoinTypeNative, // Typically native token
 			TokenDisplayName: "",
 			Decimals:         model.NativeDefaultDecimals,
 			CreatedTime:      unixTime,
@@ -76,7 +85,10 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(resp *model.Blockscou
 			TranType:         tranType,
 			ApproveShow:      "",
 			IconURL:          "",
-		})
+		}
+
+		transactions = append(transactions, transaction)
 	}
+
 	return transactions
 }

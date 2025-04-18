@@ -47,8 +47,7 @@ func (p *AnkrProvider) GetTransactionsByAddress(address string) (*model.AnkrTran
 // These are native token transfers (ETH, BNB, MATIC, etc.)
 func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse, address string) []model.Transaction {
 	if resp == nil || resp.Result.Transactions == nil {
-		logger.Log.Warn().
-			Msg("No normal transactions to transform")
+		logger.Log.Warn().Msg("No normal transactions to transform")
 		return nil
 	}
 
@@ -57,38 +56,46 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 		Msg("Transforming normal transactions")
 
 	var transactions []model.Transaction
+
 	for _, tx := range resp.Result.Transactions {
 		chainID, _ := config.AnkrChainIDByName(tx.Blockchain)
 		height := parseStringToInt64OrDefault(tx.BlockNumber, 0)
-		states := parseStringToInt64OrDefault(tx.Status, 0)
 		timestamp := parseStringToInt64OrDefault(tx.Timestamp, 0)
 		txIndex := parseStringToInt64OrDefault(tx.TransactionIndex, 0)
 
+		// Determine transaction state
+		var state int
+		if parseStringToInt64OrDefault(tx.Status, 0) == model.TxStateSuccess {
+			state = model.TxStateSuccess
+		} else {
+			state = model.TxStateFail
+		}
+
+		// Normalize values
 		amount, _ := NormalizeNumericString(tx.Value)
 		gasLimit, _ := NormalizeNumericString(tx.Gas)
 		gasUsed, _ := NormalizeNumericString(tx.GasUsed)
 		gasPrice, _ := NormalizeNumericString(tx.GasPrice)
 		nonce, _ := NormalizeNumericString(tx.Nonce)
 
-		// Detect ERC20 type and approve value from transaction logs
+		// Detect ERC20 type and approve value
 		txType, tokenAddr, approveValue := DetectERC20TypeForAnkr(tx.Logs)
-
 		approveShow := ""
-		if txType != model.TxTypeUnknown {
-			if txType == model.TxTypeApprove {
-				approveShow = approveValue // Directly assign hex string, e.g., "0x000000...0001"
-			}
+		if txType == model.TxTypeApprove {
+			approveShow = approveValue
 		}
 
-		tranType := model.TransTypeOut // default to outgoing
+		// Determine transaction direction
+		tranType := model.TransTypeOut
 		if strings.EqualFold(tx.To, address) {
 			tranType = model.TransTypeIn
 		}
 
-		transactions = append(transactions, model.Transaction{
+		// Build transaction model
+		transaction := model.Transaction{
 			ChainID:          chainID,
 			TokenID:          0,
-			State:            int(states),
+			State:            state,
 			Height:           height,
 			Hash:             tx.Hash,
 			TxIndex:          txIndex,
@@ -110,11 +117,14 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 			TranType:         tranType,
 			ApproveShow:      approveShow,
 			IconURL:          "",
-		})
+		}
+
+		transactions = append(transactions, transaction)
 	}
 
 	logger.Log.Debug().
 		Int("transformed_count", len(transactions)).
 		Msg("Successfully transformed normal transactions")
+
 	return transactions
 }
