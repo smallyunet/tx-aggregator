@@ -22,137 +22,140 @@ func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.Blocksc
 	return &result, nil
 }
 
-// fetchLogsByBlockFromRPC makes batched eth_getBlockReceipts requests for the
-// given blocks and returns all logs indexed by txHash.
+// fetchLogsByBlockFromRPC issues batched eth_getBlockReceipts requests, converts
+// the raw RPC receipts into Blockscout‑style logs, and returns them grouped by
+// transaction hash.
 //
-// Parameters
-// -----------
-// blocks : map[int64]struct{}
-//
-//	Set of block numbers to query. The keys are the block heights.
-//
-// Returns
-// --------
-// map[string][]model.BlockscoutLog
-//
-//	A map where the key is the transaction hash and the value is the slice
-//	of logs that belong to that transaction.
-//
-// error
-//
-//	Non-nil if any shard fails. Partial results are discarded on error.
-func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(blocks map[int64]struct{}) (map[string][]model.BlockscoutLog, error) {
+// ───────────────────────────────────────────────────────────────────────────────
+// blocks        Set of block numbers to query (map key = height, value ignored)
+// return.value  map[txHash][]model.BlockscoutLog
+// return.error  Non‑nil if any shard fails (partial results are discarded)
+// ───────────────────────────────────────────────────────────────────────────────
+func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
+	blocks map[int64]struct{},
+) (map[string][]model.BlockscoutLog, error) {
+
 	if len(blocks) == 0 {
 		return nil, nil
 	}
 
+	// Tune these to your infra.
 	const (
-		batchSize   = 50
-		maxParallel = 4
+		batchSize   = 50 // how many blocks per JSON‑RPC batch request
+		maxParallel = 4  // how many batches in flight at once
 	)
-	requestTimeout := time.Duration(p.config.RPCRequestTimeout) * time.Second
+	reqTimeout := time.Duration(p.config.RPCRequestTimeout) * time.Second
 
-	// Internal types for RPC structure
-	type rpcReq struct {
-		JSONRPC string        `json:"jsonrpc"`
-		ID      int           `json:"id"`
-		Method  string        `json:"method"`
-		Params  []interface{} `json:"params"`
-	}
-	type receipt struct {
-		TransactionHash string                `json:"transactionHash"`
-		Logs            []model.BlockscoutLog `json:"logs"`
-	}
-	type rpcResp struct {
-		ID     int       `json:"id"`
-		Result []receipt `json:"result"`
-		Error  *struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		} `json:"error,omitempty"`
-	}
-
-	// Group blocks into batches (shards)
-	var shardBlocks [][]int64
-	cur := make([]int64, 0, batchSize)
+	// ───────────────────────────── Split into shards ──────────────────────────
+	var shards [][]int64
+	buf := make([]int64, 0, batchSize)
 	for blk := range blocks {
-		cur = append(cur, blk)
-		if len(cur) == batchSize {
-			shardBlocks = append(shardBlocks, cur)
-			cur = make([]int64, 0, batchSize)
+		buf = append(buf, blk)
+		if len(buf) == batchSize {
+			shards = append(shards, buf)
+			buf = make([]int64, 0, batchSize)
 		}
 	}
-	if len(cur) > 0 {
-		shardBlocks = append(shardBlocks, cur)
+	if len(buf) > 0 {
+		shards = append(shards, buf)
 	}
 
-	// Prepare result container
-	merged := make(map[string][]model.BlockscoutLog, 1024)
-	var mu sync.Mutex
+	merged := make(map[string][]model.BlockscoutLog, 1024) // final result
+	var mu sync.Mutex                                      // guards merged
 
-	// Launch parallel requests
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	// Cancellation context for all HTTP calls
+	ctx, cancel := context.WithTimeout(context.Background(), reqTimeout)
 	defer cancel()
 
 	g, ctx := errgroup.WithContext(ctx)
-	sem := make(chan struct{}, maxParallel)
+	sem := make(chan struct{}, maxParallel) // simple semaphore
 
-	for _, blocks := range shardBlocks {
-		blkCopy := append([]int64(nil), blocks...) // capture range variable
-		sem <- struct{}{}
+	for _, shard := range shards {
+		shard := append([]int64(nil), shard...) // capture range var
+		sem <- struct{}{}                       // acquire slot
 
 		g.Go(func() error {
-			defer func() { <-sem }()
+			defer func() { <-sem }() // release slot
 
-			// Build the batch JSON-RPC request
-			reqs := make([]rpcReq, 0, len(blkCopy))
-			for i, b := range blkCopy {
-				hexBlock := "0x" + strconv.FormatInt(b, 16)
+			// ─────────────── Build JSON‑RPC batch request payload ──────────────
+			type rpcReq struct {
+				JSONRPC string        `json:"jsonrpc"`
+				ID      int           `json:"id"`
+				Method  string        `json:"method"`
+				Params  []interface{} `json:"params"`
+			}
+			reqs := make([]rpcReq, 0, len(shard))
+			for i, blk := range shard {
 				reqs = append(reqs, rpcReq{
 					JSONRPC: "2.0",
 					ID:      i + 1,
 					Method:  "eth_getBlockReceipts",
-					Params:  []interface{}{hexBlock},
+					Params:  []interface{}{"0x" + strconv.FormatInt(blk, 16)},
 				})
 			}
 
-			// Perform the HTTP POST using shared utility
-			var rpcResponses []rpcResp
+			// ─────────────── Send HTTP POST & parse into model structs ─────────
+			var rpcResponses []model.RpcReceiptResponse
 			if err := DoHttpRequestWithLogging(
 				"POST",
-				fmt.Sprintf("blockscout.rpcReceipts.shard.%d", len(blkCopy)),
+				fmt.Sprintf("blockscout.rpcReceipts.shard.%d", len(shard)),
 				p.config.RPCURL,
 				reqs,
-				map[string]string{
-					"Content-Type": "application/json",
-				},
+				map[string]string{"Content-Type": "application/json"},
 				&rpcResponses,
 			); err != nil {
 				return err
 			}
 
-			// Parse receipts and aggregate logs
+			// ─────────── Convert RpcReceiptLog → BlockscoutLog ────────────────
 			local := make(map[string][]model.BlockscoutLog, len(rpcResponses)*4)
-			for _, r := range rpcResponses {
-				if r.Error != nil {
-					return fmt.Errorf("rpc error id=%d code=%d: %s", r.ID, r.Error.Code, r.Error.Message)
-				}
-				for _, rc := range r.Result {
-					if len(rc.Logs) > 0 {
-						local[rc.TransactionHash] = append(local[rc.TransactionHash], rc.Logs...)
+
+			for _, resp := range rpcResponses {
+				for _, receipt := range resp.Result {
+					for _, l := range receipt.Logs {
+
+						// Convert hex strings → int64 where needed
+						var (
+							blockNum int64
+							idx      int64
+						)
+						if len(l.BlockNumber) > 2 { // "0x..."
+							if v, err := strconv.ParseInt(l.BlockNumber[2:], 16, 64); err == nil {
+								blockNum = v
+							}
+						}
+						if len(l.LogIndex) > 2 {
+							if v, err := strconv.ParseInt(l.LogIndex[2:], 16, 64); err == nil {
+								idx = v
+							}
+						}
+
+						log := model.BlockscoutLog{
+							Address: model.BlockscoutAddressDetails{
+								Hash: l.Address,
+							},
+							BlockHash:       l.BlockHash,
+							BlockNumber:     blockNum,
+							Data:            l.Data,
+							Topics:          l.Topics,
+							TransactionHash: l.TransactionHash,
+							Index:           idx,
+							// SmartContract / Decoded will remain zero‑value
+						}
+						local[l.TransactionHash] = append(local[l.TransactionHash], log)
 					}
 				}
 			}
 
-			// Safe merge to shared result map
+			// ─────────────── Thread‑safe merge into final map ──────────────────
 			mu.Lock()
-			for k, v := range local {
-				merged[k] = append(merged[k], v...)
+			for txHash, logs := range local {
+				merged[txHash] = append(merged[txHash], logs...)
 			}
 			mu.Unlock()
 
 			logger.Log.Debug().
-				Int("blocks", len(blkCopy)).
+				Int("blocks", len(shard)).
 				Int("tx_hashes", len(local)).
 				Msg("Fetched logs shard successfully")
 
@@ -160,7 +163,7 @@ func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(blocks map[int64]struct{}) 
 		})
 	}
 
-	// Wait for all goroutines
+	// Wait for every goroutine. If any returns error, whole call fails.
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
