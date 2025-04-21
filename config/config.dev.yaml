@@ -57,4 +57,4 @@ chain_names:
   BSC: 56       # Binance Smart Chain
   POL: 137      # Polygon (Matic)
   BASE: 8453    # Base Mainnet
-  TTX: 202502   # Tantin chain ID
+  TTX: 12301   # Tantin chain ID
