@@ -13,7 +13,7 @@ redis:
   password: ""  # Redis authentication password (empty for no password)
 
 providers:
-  request_timeout: 90
+  request_timeout: 60
 
 # Ankr API configuration for blockchain data
 ankr:
