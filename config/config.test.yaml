@@ -13,7 +13,7 @@ redis:
   password: ""  # Redis authentication password (empty for no password)
 
 providers:
-  request_timeout: 30
+  request_timeout: 90
 
 # Ankr API configuration for blockchain data
 ankr:
@@ -37,7 +37,7 @@ blockscout:
     chain_name: TTX
     request_page_size: 1000
     rpc_url: https://rpc.tantin.com
-    rpc_request_timeout: 8
+    rpc_request_timeout: 90
 
 # Cache configuration
 cache:
