@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"tx-aggregator/internal/chainmeta"
+	"tx-aggregator/utils"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -45,7 +45,7 @@ func main() {
 
 	// Blockscout providers
 	for _, bs := range config.AppConfig.Blockscout {
-		chainID, err := chainmeta.ChainIDByName(bs.ChainName)
+		chainID, err := utils.ChainIDByName(bs.ChainName)
 		if err != nil {
 			logger.Log.Warn().Str("chain_name", bs.ChainName).Msg("Unknown chain name, skipping Blockscout provider")
 			continue

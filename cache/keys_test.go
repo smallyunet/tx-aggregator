@@ -2,7 +2,7 @@ package cache
 
 import (
 	"testing"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 )
 
 func TestFormatChainKey(t *testing.T) {
@@ -30,8 +30,8 @@ func TestFormatNativeKey(t *testing.T) {
 		chainName string
 		expected  string
 	}{
-		{"0xABCDEF", "ETH", "0xabcdef-eth-" + model.NativeTokenName},
-		{"0x123456", "bsc", "0x123456-bsc-" + model.NativeTokenName},
+		{"0xABCDEF", "ETH", "0xabcdef-eth-" + types.NativeTokenName},
+		{"0x123456", "bsc", "0x123456-bsc-" + types.NativeTokenName},
 	}
 
 	for _, tt := range tests {

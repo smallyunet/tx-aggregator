@@ -4,8 +4,8 @@ import (
 	"tx-aggregator/cache"
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
 	"tx-aggregator/provider"
+	"tx-aggregator/types"
 )
 
 type Service struct {
@@ -20,7 +20,7 @@ func NewService(c *cache.RedisCache, p *provider.MultiProvider) *Service {
 	}
 }
 
-func (s *Service) GetTransactions(params *model.TransactionQueryParams) (*model.TransactionResponse, error) {
+func (s *Service) GetTransactions(params *types.TransactionQueryParams) (*types.TransactionResponse, error) {
 	logger.Log.Info().
 		Str("address", params.Address).
 		Str("token_address", params.TokenAddress).
@@ -47,10 +47,10 @@ func (s *Service) GetTransactions(params *model.TransactionQueryParams) (*model.
 	resp, err = s.provider.GetTransactions(params.Address)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Provider query failed")
-		code := model.CodeProviderFailed
-		return &model.TransactionResponse{
+		code := types.CodeProviderFailed
+		return &types.TransactionResponse{
 			Code:    code,
-			Message: model.GetMessageByCode(code),
+			Message: types.GetMessageByCode(code),
 		}, err
 	}
 	logger.Log.Debug().
@@ -76,7 +76,7 @@ func (s *Service) GetTransactions(params *model.TransactionQueryParams) (*model.
 	return s.postProcess(resp, params), nil
 }
 
-func (s *Service) postProcess(resp *model.TransactionResponse, params *model.TransactionQueryParams) *model.TransactionResponse {
+func (s *Service) postProcess(resp *types.TransactionResponse, params *types.TransactionQueryParams) *types.TransactionResponse {
 	// Filter by chain
 	before := len(resp.Result.Transactions)
 	resp = FilterTransactionsByChainNames(resp, params.ChainNames)
@@ -88,8 +88,8 @@ func (s *Service) postProcess(resp *model.TransactionResponse, params *model.Tra
 	// Token or native coin filter
 	if params.TokenAddress != "" {
 		before = len(resp.Result.Transactions)
-		if params.TokenAddress == model.NativeTokenName {
-			resp = FilterTransactionsByCoinType(resp, model.CoinTypeNative)
+		if params.TokenAddress == types.NativeTokenName {
+			resp = FilterTransactionsByCoinType(resp, types.CoinTypeNative)
 			logger.Log.Debug().
 				Int("filtered_native", len(resp.Result.Transactions)).
 				Int("before_filter", before).
@@ -114,7 +114,7 @@ func (s *Service) postProcess(resp *model.TransactionResponse, params *model.Tra
 	resp = SetServerChainNames(resp)
 
 	// Final response setup
-	resp.Code = model.CodeSuccess
-	resp.Message = model.GetMessageByCode(model.CodeSuccess)
+	resp.Code = types.CodeSuccess
+	resp.Message = types.GetMessageByCode(types.CodeSuccess)
 	return resp
 }

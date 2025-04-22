@@ -3,20 +3,19 @@ package ankr
 import (
 	"strings"
 	"tx-aggregator/config"
-	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
 // GetTransactionsByAddress retrieves normal transactions from Ankr for the given address
 // These are native token transfers (ETH, BNB, MATIC, etc.)
-func (p *AnkrProvider) GetTransactionsByAddress(address string) (*model.AnkrTransactionResponse, error) {
+func (p *AnkrProvider) GetTransactionsByAddress(address string) (*types.AnkrTransactionResponse, error) {
 	logger.Log.Debug().
 		Str("address", address).
 		Msg("Fetching normal transactions from Ankr")
 
-	requestBody := model.AnkrTransactionRequest{
+	requestBody := types.AnkrTransactionRequest{
 		JSONRPC: "2.0",
 		Method:  "ankr_getTransactionsByAddress",
 		Params: map[string]interface{}{
@@ -29,7 +28,7 @@ func (p *AnkrProvider) GetTransactionsByAddress(address string) (*model.AnkrTran
 		ID: 1,
 	}
 
-	var result model.AnkrTransactionResponse
+	var result types.AnkrTransactionResponse
 	if err := p.sendRequest(requestBody, &result); err != nil {
 		logger.Log.Error().
 			Err(err).
@@ -47,7 +46,7 @@ func (p *AnkrProvider) GetTransactionsByAddress(address string) (*model.AnkrTran
 
 // transformAnkrNormalTx converts AnkrTransactionResponse into a slice of model.Transaction
 // These are native token transfers (ETH, BNB, MATIC, etc.)
-func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse, address string) []model.Transaction {
+func (a *AnkrProvider) transformAnkrNormalTx(resp *types.AnkrTransactionResponse, address string) []types.Transaction {
 	if resp == nil || resp.Result.Transactions == nil {
 		logger.Log.Warn().Msg("No normal transactions to transform")
 		return nil
@@ -57,25 +56,25 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 		Int("tx_count", len(resp.Result.Transactions)).
 		Msg("Transforming normal transactions")
 
-	var transactions []model.Transaction
+	var transactions []types.Transaction
 
 	for _, tx := range resp.Result.Transactions {
-		chainID, _ := chainmeta.AnkrChainIDByName(tx.Blockchain)
+		chainID, _ := utils.AnkrChainIDByName(tx.Blockchain)
 		height := utils.ParseStringToInt64OrDefault(tx.BlockNumber, 0)
 		timestamp := utils.ParseStringToInt64OrDefault(tx.Timestamp, 0)
 		txIndex := utils.ParseStringToInt64OrDefault(tx.TransactionIndex, 0)
 
 		// Determine transaction state
 		var state int
-		if utils.ParseStringToInt64OrDefault(tx.Status, 0) == model.TxStateSuccess {
-			state = model.TxStateSuccess
+		if utils.ParseStringToInt64OrDefault(tx.Status, 0) == types.TxStateSuccess {
+			state = types.TxStateSuccess
 		} else {
-			state = model.TxStateFail
+			state = types.TxStateFail
 		}
 
 		// Normalize values
 		amountRaw, err := utils.NormalizeNumericString(tx.Value)
-		amount := utils.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		amount := utils.DivideByDecimals(amountRaw, types.NativeDefaultDecimals)
 		gasLimit, err := utils.NormalizeNumericString(tx.Gas)
 		gasUsed, err := utils.NormalizeNumericString(tx.GasUsed)
 		gasPrice, err := utils.NormalizeNumericString(tx.GasPrice)
@@ -90,18 +89,18 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 		// Detect ERC20 type and approve value
 		txType, tokenAddr, approveValue := utils.DetectERC20TypeForAnkr(tx.Logs)
 		approveShow := ""
-		if txType == model.TxTypeApprove {
+		if txType == types.TxTypeApprove {
 			approveShow = approveValue
 		}
 
 		// Determine transaction direction
-		tranType := model.TransTypeOut
+		tranType := types.TransTypeOut
 		if strings.EqualFold(tx.To, address) {
-			tranType = model.TransTypeIn
+			tranType = types.TransTypeIn
 		}
 
-		// Build transaction model
-		transaction := model.Transaction{
+		// Build transaction types
+		transaction := types.Transaction{
 			ChainID:          chainID,
 			TokenID:          0,
 			State:            state,
@@ -119,9 +118,9 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 			GasPrice:         gasPrice,
 			Nonce:            nonce,
 			Type:             txType,
-			CoinType:         model.CoinTypeNative,
+			CoinType:         types.CoinTypeNative,
 			TokenDisplayName: "",
-			Decimals:         model.NativeDefaultDecimals,
+			Decimals:         types.NativeDefaultDecimals,
 			CreatedTime:      timestamp,
 			ModifiedTime:     timestamp,
 			TranType:         tranType,

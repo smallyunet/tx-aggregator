@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"unicode"
 )
 
@@ -30,7 +30,7 @@ func DetectERC20Event(
 	const approveSig = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 
 	if len(topics) == 0 {
-		return model.TxTypeUnknown, "", ""
+		return types.TxTypeUnknown, "", ""
 	}
 
 	// Convert to lower for matching
@@ -40,30 +40,30 @@ func DetectERC20Event(
 	switch topic0 {
 	case transferSig:
 		// This is an ERC-20 Transfer event
-		return model.TxTypeTransfer, addrLower, ""
+		return types.TxTypeTransfer, addrLower, ""
 
 	case approveSig:
 		// This is an ERC-20 Approval event
 		// The amount is typically in the log's data field
-		return model.TxTypeApprove, addrLower, data
+		return types.TxTypeApprove, addrLower, data
 
 	default:
 		// Not recognized
-		return model.TxTypeUnknown, "", ""
+		return types.TxTypeUnknown, "", ""
 	}
 }
 
 // Within wherever you loop over logs in a transaction:
-func DetectERC20TypeForAnkr(logs []model.AnkrLogEntry) (typ int, tokenAddress, approveValue string) {
+func DetectERC20TypeForAnkr(logs []types.AnkrLogEntry) (typ int, tokenAddress, approveValue string) {
 	for _, log := range logs {
 		txType, tAddr, appVal := DetectERC20Event(log.Address, log.Topics, log.Data)
-		if txType != model.TxTypeUnknown {
+		if txType != types.TxTypeUnknown {
 			// As soon as you detect a recognized event, you can return it.
 			// Or, if you want to keep searching for multiple, you can adapt logic.
 			return txType, tAddr, appVal
 		}
 	}
-	return model.TxTypeUnknown, "", ""
+	return types.TxTypeUnknown, "", ""
 }
 
 // ParseStringToInt64OrDefault converts a string to int64, supporting hex with "0x" prefix
@@ -104,7 +104,7 @@ func ParseBlockscoutTimestampToUnix(ts string) int64 {
 
 // MergeLogMaps appends logs from src into dst (keyed by tx hash).
 // Duplicate logs are allowed; add deduplication here if required.
-func MergeLogMaps(dst, src map[string][]model.BlockscoutLog) {
+func MergeLogMaps(dst, src map[string][]types.BlockscoutLog) {
 	for hash, logs := range src {
 		dst[hash] = append(dst[hash], logs...)
 	}
@@ -147,11 +147,11 @@ func NormalizeNumericString(input string) (string, error) {
 // PatchTokenTransactionsWithNormalTxInfo updates token transactions with gas-related fields
 // by looking up matching tx hash from the normal transactions.
 func PatchTokenTransactionsWithNormalTxInfo(
-	tokenTxs []model.Transaction,
-	normalTxs []model.Transaction,
-) []model.Transaction {
+	tokenTxs []types.Transaction,
+	normalTxs []types.Transaction,
+) []types.Transaction {
 	// Build a lookup map from normal transactions
-	txMap := make(map[string]model.Transaction, len(normalTxs))
+	txMap := make(map[string]types.Transaction, len(normalTxs))
 	for _, tx := range normalTxs {
 		txMap[tx.Hash] = tx
 	}

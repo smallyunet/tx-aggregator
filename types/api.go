@@ -1,4 +1,4 @@
-package model
+package types
 
 // TransactionQueryParams represents the parameters for querying transactions
 type TransactionQueryParams struct {

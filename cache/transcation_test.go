@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"tx-aggregator/config"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 )
 
 // newRedisCacheWithServer builds a RedisCache that communicates with the provided miniredis server instance.
@@ -33,15 +33,15 @@ func TestParseTxAndSaveToCache_Integration(t *testing.T) {
 	rc := newRedisCacheWithServer(t, s)
 
 	// ② prepare input data
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{
 		{
 			ChainID:  1,
-			CoinType: model.CoinTypeNative,
+			CoinType: types.CoinTypeNative,
 		},
 		{
 			ChainID:      1,
-			CoinType:     model.CoinTypeToken,
+			CoinType:     types.CoinTypeToken,
 			TokenAddress: "0xToken",
 		},
 	}
@@ -68,7 +68,7 @@ func TestQueryTxFromCache_Integration(t *testing.T) {
 
 	// ① pre-write fake data
 	key := formatChainKey("0xUser", "ETH") // function should have been refactored to use chain name
-	txs := []model.Transaction{
+	txs := []types.Transaction{
 		{
 			Hash:    "0xabc",
 			ChainID: 1,
@@ -79,7 +79,7 @@ func TestQueryTxFromCache_Integration(t *testing.T) {
 	s.SetTTL(key, time.Hour) // ensure the key does not expire
 
 	// ② query the cache
-	params := &model.TransactionQueryParams{
+	params := &types.TransactionQueryParams{
 		Address:    "0xUser",
 		ChainNames: []string{"ETH"},
 	}
@@ -97,7 +97,7 @@ func TestQueryTxFromCache_EmptyChains(t *testing.T) {
 		ctx:    context.Background(),
 	}
 
-	params := &model.TransactionQueryParams{
+	params := &types.TransactionQueryParams{
 		Address:    "0xUser",
 		ChainNames: []string{},
 	}

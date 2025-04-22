@@ -11,9 +11,8 @@ import (
 	"io"
 	"net/http"
 	"time"
-	"tx-aggregator/config"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 
 	"golang.org/x/sync/errgroup"
@@ -23,12 +22,12 @@ import (
 // data from a Blockscout‑compatible API.
 type BlockscoutProvider struct {
 	chainID int64 // Numeric chain ID
-	config  config.BlockscoutConfig
+	config  types.BlockscoutConfig
 }
 
 // NewBlockscoutProvider returns a new BlockscoutProvider.
 // Trailing slashes are trimmed from baseURL for consistency.
-func NewBlockscoutProvider(chainID int64, config config.BlockscoutConfig) *BlockscoutProvider {
+func NewBlockscoutProvider(chainID int64, config types.BlockscoutConfig) *BlockscoutProvider {
 	logger.Log.Info().
 		Msg("Initializing BlockscoutProvider")
 
@@ -40,20 +39,20 @@ func NewBlockscoutProvider(chainID int64, config config.BlockscoutConfig) *Block
 
 // GetTransactions concurrently fetches all relevant data for a single address
 // and returns a unified TransactionResponse.
-func (p *BlockscoutProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
+func (p *BlockscoutProvider) GetTransactions(address string) (*types.TransactionResponse, error) {
 	logger.Log.Info().
 		Str("chain", p.config.ChainName).
 		Str("address", address).
 		Msg("Fetching transactions from Blockscout")
 
 	var (
-		normalTxs   []model.Transaction
-		tokenTxs    []model.Transaction
-		internalTxs []model.Transaction
+		normalTxs   []types.Transaction
+		tokenTxs    []types.Transaction
+		internalTxs []types.Transaction
 
 		// allLogs holds logs from both the Blockscout logs API and the RPC receipts.
-		allLogs  = make(map[string][]model.BlockscoutLog)
-		rpcLogs  map[string][]model.BlockscoutLog
+		allLogs  = make(map[string][]types.BlockscoutLog)
+		rpcLogs  map[string][]types.BlockscoutLog
 		fetchErr error
 	)
 
@@ -146,9 +145,9 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 		Str("address", address).
 		Msg("Successfully fetched and merged Blockscout transactions")
 
-	return &model.TransactionResponse{
+	return &types.TransactionResponse{
 		Result: struct {
-			Transactions []model.Transaction `json:"transactions"`
+			Transactions []types.Transaction `json:"transactions"`
 		}{Transactions: allTxs},
 		Id: int(p.chainID),
 	}, nil

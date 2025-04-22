@@ -1,4 +1,4 @@
-package model
+package types
 
 // TransactionType defines the source of the transaction
 type TransactionType string

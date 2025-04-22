@@ -5,8 +5,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	"strings"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
 	"tx-aggregator/provider"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
@@ -32,14 +32,14 @@ func NewAnkrProvider(apiKey, url string) *AnkrProvider {
 
 // GetTransactions fetches and transforms both normal transactions and token transfers for the given address,
 // using concurrency in a more streamlined way (fetch & transform in the same goroutine).
-func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
+func (a *AnkrProvider) GetTransactions(address string) (*types.TransactionResponse, error) {
 	logger.Log.Info().
 		Str("address", address).
 		Msg("Starting to fetch all transactions for address")
 
 	var (
-		normalTxs []model.Transaction
-		tokenTxs  []model.Transaction
+		normalTxs []types.Transaction
+		tokenTxs  []types.Transaction
 	)
 
 	// Use an errgroup to concurrently fetch and transform both types of transactions
@@ -93,9 +93,9 @@ func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionRespon
 		Int("total_transactions", len(transactions)).
 		Msg("Successfully fetched and processed all transactions")
 
-	return &model.TransactionResponse{
+	return &types.TransactionResponse{
 		Result: struct {
-			Transactions []model.Transaction `json:"transactions"`
+			Transactions []types.Transaction `json:"transactions"`
 		}{
 			Transactions: transactions,
 		},

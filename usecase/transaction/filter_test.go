@@ -3,39 +3,39 @@ package transaction
 import (
 	"testing"
 	"tx-aggregator/config"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterTransactionsByInvolvedAddress(t *testing.T) {
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{
 		{FromAddress: "0xabc", ToAddress: "0xdef", TokenAddress: "0x123"},
 		{FromAddress: "0xdef", ToAddress: "0xAbC", TokenAddress: "0x456"},
 		{FromAddress: "0xghi", ToAddress: "0xjkl", TokenAddress: "0XABC"},
 		{FromAddress: "0xzzz", ToAddress: "0xyyy", TokenAddress: "0xtoken"},
 	}
-	params := &model.TransactionQueryParams{Address: "0xAbC", TokenAddress: "0xabc"}
+	params := &types.TransactionQueryParams{Address: "0xAbC", TokenAddress: "0xabc"}
 	filtered := FilterTransactionsByInvolvedAddress(resp, params)
 	assert.Len(t, filtered.Result.Transactions, 3)
 }
 
 func TestFilterTransactionsByTokenAddress(t *testing.T) {
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{
 		{TokenAddress: "0x111"},
 		{TokenAddress: "0x222"},
 		{TokenAddress: "0X111"},
 	}
-	params := &model.TransactionQueryParams{TokenAddress: "0x111"}
+	params := &types.TransactionQueryParams{TokenAddress: "0x111"}
 	filtered := FilterTransactionsByTokenAddress(resp, params)
 	assert.Len(t, filtered.Result.Transactions, 2)
 }
 
 func TestFilterTransactionsByCoinType(t *testing.T) {
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{
 		{CoinType: 1},
 		{CoinType: 2},
 		{CoinType: 1},
@@ -46,28 +46,28 @@ func TestFilterTransactionsByCoinType(t *testing.T) {
 
 func TestFilterTransactionsByChainNames(t *testing.T) {
 	// No chainNames specified: should return original
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{{ChainID: 1}, {ChainID: 2}}
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{{ChainID: 1}, {ChainID: 2}}
 	filtered := FilterTransactionsByChainNames(resp, []string{})
 	assert.Len(t, filtered.Result.Transactions, 2)
 
 	// Specified but no match: should return empty
-	resp = &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{{ChainID: 3}, {ChainID: 4}}
+	resp = &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{{ChainID: 3}, {ChainID: 4}}
 	filtered = FilterTransactionsByChainNames(resp, []string{"foo"})
 	assert.Len(t, filtered.Result.Transactions, 0)
 
 	// ChainID=0 matches default id from ChainIDByName("any") => id=0
-	resp = &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{{ChainID: 0}, {ChainID: 1}}
+	resp = &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{{ChainID: 0}, {ChainID: 1}}
 	filtered = FilterTransactionsByChainNames(resp, []string{"any"})
 	assert.Len(t, filtered.Result.Transactions, 1)
 	assert.Equal(t, int64(0), filtered.Result.Transactions[0].ChainID)
 }
 
 func TestSortTransactionResponseByHeightAndIndex(t *testing.T) {
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{
 		{Height: 2, TxIndex: 1},
 		{Height: 1, TxIndex: 3},
 		{Height: 1, TxIndex: 2},
@@ -92,8 +92,8 @@ func TestSortTransactionResponseByHeightAndIndex(t *testing.T) {
 }
 
 func TestLimitTransactions(t *testing.T) {
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{
 		{TxIndex: 1},
 		{TxIndex: 2},
 		{TxIndex: 3},
@@ -107,8 +107,8 @@ func TestLimitTransactions(t *testing.T) {
 func TestSetServerChainNames(t *testing.T) {
 	// Seed mapping
 	config.AppConfig.ChainNames = map[string]int64{"chaina": 10}
-	resp := &model.TransactionResponse{}
-	resp.Result.Transactions = []model.Transaction{
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{
 		{ChainID: 10},
 		{ChainID: 99},
 	}

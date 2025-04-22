@@ -1,4 +1,4 @@
-package model
+package types
 
 // CoinType represents the type of cryptocurrency
 const (

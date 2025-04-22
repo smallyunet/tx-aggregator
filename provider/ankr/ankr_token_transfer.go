@@ -3,20 +3,19 @@ package ankr
 import (
 	"strings"
 	"tx-aggregator/config"
-	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
 // GetTokenTransfers retrieves token transfer events from Ankr for the given address
 // These are ERC20/BEP20/etc token transfers
-func (p *AnkrProvider) GetTokenTransfers(address string) (*model.AnkrTokenTransferResponse, error) {
+func (p *AnkrProvider) GetTokenTransfers(address string) (*types.AnkrTokenTransferResponse, error) {
 	logger.Log.Debug().
 		Str("address", address).
 		Msg("Fetching token transfers from Ankr")
 
-	requestBody := model.AnkrTransactionRequest{
+	requestBody := types.AnkrTransactionRequest{
 		JSONRPC: "2.0",
 		Method:  "ankr_getTokenTransfers",
 		Params: map[string]interface{}{
@@ -27,7 +26,7 @@ func (p *AnkrProvider) GetTokenTransfers(address string) (*model.AnkrTokenTransf
 		ID: 1,
 	}
 
-	var result model.AnkrTokenTransferResponse
+	var result types.AnkrTokenTransferResponse
 	if err := p.sendRequest(requestBody, &result); err != nil {
 		logger.Log.Error().
 			Err(err).
@@ -46,9 +45,9 @@ func (p *AnkrProvider) GetTokenTransfers(address string) (*model.AnkrTokenTransf
 // transformAnkrTokenTransfers converts AnkrTokenTransferResponse into a slice of model.Transaction
 // These represent ERC20/BEP20/etc token transfers
 func (a *AnkrProvider) transformAnkrTokenTransfers(
-	resp *model.AnkrTokenTransferResponse,
+	resp *types.AnkrTokenTransferResponse,
 	address string,
-) []model.Transaction {
+) []types.Transaction {
 	if resp == nil || resp.Result.Transfers == nil {
 		logger.Log.Warn().Msg("No token transfers to transform")
 		return nil
@@ -58,10 +57,10 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 		Int("transfer_count", len(resp.Result.Transfers)).
 		Msg("Transforming token transfers")
 
-	var transactions []model.Transaction
+	var transactions []types.Transaction
 
 	for _, tr := range resp.Result.Transfers {
-		chainID, err := chainmeta.AnkrChainIDByName(tr.Blockchain)
+		chainID, err := utils.AnkrChainIDByName(tr.Blockchain)
 		if err != nil {
 			logger.Log.Error().
 				Err(err).
@@ -70,9 +69,9 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 		}
 
 		// Determine transaction direction
-		tranType := model.TransTypeOut
+		tranType := types.TransTypeOut
 		if strings.EqualFold(tr.ToAddress, address) {
-			tranType = model.TransTypeIn
+			tranType = types.TransTypeIn
 		}
 
 		balance, err := utils.MultiplyByDecimals(tr.Value, int(tr.TokenDecimals))
@@ -84,10 +83,10 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 		}
 
 		// Construct transaction object
-		transaction := model.Transaction{
+		transaction := types.Transaction{
 			ChainID:          chainID,
 			TokenID:          0,
-			State:            model.TxStateSuccess, // always mark as success (API limitation)
+			State:            types.TxStateSuccess, // always mark as success (API limitation)
 			Height:           tr.BlockHeight,
 			Hash:             tr.TransactionHash,
 			BlockHash:        "", // not available from API
@@ -100,8 +99,8 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 			GasLimit:         "", // not available
 			GasPrice:         "", // not available
 			Nonce:            "", // not available
-			Type:             model.TxTypeTransfer,
-			CoinType:         model.CoinTypeToken,
+			Type:             types.TxTypeTransfer,
+			CoinType:         types.CoinTypeToken,
 			TokenDisplayName: tr.TokenName,
 			Decimals:         tr.TokenDecimals,
 			CreatedTime:      tr.Timestamp,

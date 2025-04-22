@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strings"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutInternalTx retrieves internal transactions from Blockscout:
 // GET /addresses/{address}/internal-transactions
-func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.BlockscoutInternalTxResponse, error) {
+func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*types.BlockscoutInternalTxResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/internal-transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
-	var result model.BlockscoutInternalTxResponse
+	var result types.BlockscoutInternalTxResponse
 	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.internalTx", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
@@ -22,21 +22,21 @@ func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.B
 // transformBlockscoutInternalTx converts internal transaction data into []model.Transaction.
 // This version captures basic transfer data without logs or deep inspection.
 func (t *BlockscoutProvider) transformBlockscoutInternalTx(
-	resp *model.BlockscoutInternalTxResponse,
+	resp *types.BlockscoutInternalTxResponse,
 	address string,
-) []model.Transaction {
+) []types.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
 		logger.Log.Warn().Msg("No internal transactions to transform from Blockscout")
 		return nil
 	}
 
-	var transactions []model.Transaction
+	var transactions []types.Transaction
 
 	for _, itx := range resp.Items {
 		// Determine transaction success state
-		state := model.TxStateFail
+		state := types.TxStateFail
 		if itx.Success {
-			state = model.TxStateSuccess
+			state = types.TxStateSuccess
 		}
 
 		// Parse timestamp to Unix time
@@ -53,15 +53,15 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 		}
 
 		// Determine transaction direction
-		tranType := model.TransTypeOut
+		tranType := types.TransTypeOut
 		if strings.EqualFold(toHash, address) {
-			tranType = model.TransTypeIn
+			tranType = types.TransTypeIn
 		}
 
 		// Normalize gas limit (if provided)
 		gasLimit, err := utils.NormalizeNumericString(itx.GasLimit)
 		amountRaw, err := utils.NormalizeNumericString(itx.Value)
-		amount := utils.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		amount := utils.DivideByDecimals(amountRaw, types.NativeDefaultDecimals)
 		if err != nil {
 			logger.Log.Error().
 				Err(err).
@@ -70,7 +70,7 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 		}
 
 		// Construct transaction object
-		transaction := model.Transaction{
+		transaction := types.Transaction{
 			ChainID:          t.chainID,
 			TokenID:          0,
 			State:            state,
@@ -86,10 +86,10 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 			GasLimit:         gasLimit,
 			GasPrice:         "",
 			Nonce:            "",
-			Type:             model.TxTypeInternal, // Internal call
-			CoinType:         model.CoinTypeNative, // Typically native token
+			Type:             types.TxTypeInternal, // Internal call
+			CoinType:         types.CoinTypeNative, // Typically native token
 			TokenDisplayName: "",
-			Decimals:         model.NativeDefaultDecimals,
+			Decimals:         types.NativeDefaultDecimals,
 			CreatedTime:      unixTime,
 			ModifiedTime:     unixTime,
 			TranType:         tranType,

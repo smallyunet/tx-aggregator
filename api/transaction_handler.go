@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"time"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	transactionUsecase "tx-aggregator/usecase/transaction"
 )
 
@@ -31,9 +31,9 @@ func (h *TransactionHandler) GetTransactions(ctx *fiber.Ctx) error {
 	params, err := parseTransactionQueryParams(ctx)
 	if err != nil {
 		logger.Log.Warn().Err(err).Msg("❌ Invalid query parameters")
-		return ctx.JSON(&model.TransactionResponse{
-			Code:    model.CodeInvalidParam,
-			Message: model.GetMessageByCode(model.CodeInvalidParam),
+		return ctx.JSON(&types.TransactionResponse{
+			Code:    types.CodeInvalidParam,
+			Message: types.GetMessageByCode(types.CodeInvalidParam),
 		})
 	}
 
@@ -53,17 +53,17 @@ func (h *TransactionHandler) GetTransactions(ctx *fiber.Ctx) error {
 
 		// Handle timeout explicitly
 		if errors.Is(err, context.DeadlineExceeded) {
-			return ctx.JSON(&model.TransactionResponse{
-				Code:    model.CodeProviderFailed, // Or define a CodeTimeout if you prefer
+			return ctx.JSON(&types.TransactionResponse{
+				Code:    types.CodeProviderFailed, // Or define a CodeTimeout if you prefer
 				Message: "Request timed out",
 			})
 		}
 
 		// Generic internal error
 		if resp == nil {
-			resp = &model.TransactionResponse{
-				Code:    model.CodeInternalError,
-				Message: model.GetMessageByCode(model.CodeInternalError),
+			resp = &types.TransactionResponse{
+				Code:    types.CodeInternalError,
+				Message: types.GetMessageByCode(types.CodeInternalError),
 			}
 		}
 

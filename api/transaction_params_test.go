@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"tx-aggregator/config"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 )
 
 func setupAppConfigForTest() {
@@ -25,7 +25,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		name           string
 		query          string
 		expectedError  string
-		expectedResult *model.TransactionQueryParams
+		expectedResult *types.TransactionQueryParams
 	}{
 		{
 			name:          "missing address",
@@ -40,7 +40,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		{
 			name:  "no chainName, use all chains",
 			query: "?address=0x0123456789abcdef0123456789abcdef01234567",
-			expectedResult: &model.TransactionQueryParams{
+			expectedResult: &types.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "",
 				ChainNames:   []string{"BSC", "ETH"}, // sorted
@@ -49,7 +49,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		{
 			name:  "valid address and valid chain names",
 			query: "?address=0x0123456789abcdef0123456789abcdef01234567&chainName=eth,bsc",
-			expectedResult: &model.TransactionQueryParams{
+			expectedResult: &types.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "",
 				ChainNames:   []string{"BSC", "ETH"}, // sorted
@@ -68,7 +68,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		{
 			name:  "valid token address native",
 			query: "?address=0x0123456789abcdef0123456789abcdef01234567&tokenAddress=native",
-			expectedResult: &model.TransactionQueryParams{
+			expectedResult: &types.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "native",
 				ChainNames:   []string{"BSC", "ETH"}, // sorted
@@ -77,7 +77,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		{
 			name:  "valid token address ethereum",
 			query: "?address=0x0123456789abcdef0123456789abcdef01234567&tokenAddress=0x000000000000000000000000000000000000dead",
-			expectedResult: &model.TransactionQueryParams{
+			expectedResult: &types.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "0x000000000000000000000000000000000000dead",
 				ChainNames:   []string{"BSC", "ETH"}, // sorted
@@ -89,7 +89,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			app := fiber.New()
 
-			var result *model.TransactionQueryParams
+			var result *types.TransactionQueryParams
 			var handlerErr error
 
 			app.Get("/tx", func(c *fiber.Ctx) error {

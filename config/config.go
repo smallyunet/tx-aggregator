@@ -5,10 +5,11 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"tx-aggregator/types"
 )
 
 // AppConfig is the global configuration instance
-var AppConfig Config
+var AppConfig types.Config
 
 func Init() {
 	log.Println("Initializing configuration...")

@@ -2,17 +2,18 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"time"
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 )
 
 // Provider defines the interface for transaction data providers.
 // Implementations of this interface are responsible for fetching transaction data
 // for a given blockchain address from various sources.
 type Provider interface {
-	GetTransactions(address string) (*model.TransactionResponse, error)
+	GetTransactions(address string) (*types.TransactionResponse, error)
 }
 
 // MultiProvider is a composite provider that aggregates results from multiple providers.
@@ -23,11 +24,11 @@ type MultiProvider struct {
 }
 
 // GetTransactions fetches from every provider concurrently and merges results
-func (m *MultiProvider) GetTransactions(address string) (*model.TransactionResponse, error) {
+func (m *MultiProvider) GetTransactions(address string) (*types.TransactionResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.AppConfig.Providers.RequestTimeout)*time.Second)
 	defer cancel()
 
-	resCh := make(chan []model.Transaction, len(m.providers))
+	resCh := make(chan []types.Transaction, len(m.providers))
 	errCh := make(chan error, len(m.providers))
 
 	for idx, p := range m.providers {
@@ -48,11 +49,20 @@ func (m *MultiProvider) GetTransactions(address string) (*model.TransactionRespo
 		}(idx, p)
 	}
 
-	var allTxs []model.Transaction
+	var (
+		allTxs       []types.Transaction
+		successCount int
+		failCount    int
+	)
+
 	for done := 0; done < len(m.providers); done++ {
 		select {
 		case txs := <-resCh:
 			allTxs = append(allTxs, txs...)
+			successCount++
+		case err := <-errCh:
+			logger.Log.Warn().Err(err).Msg("Provider error")
+			failCount++
 		case <-ctx.Done():
 			return nil, ctx.Err() // global timeout
 		}
@@ -61,10 +71,14 @@ func (m *MultiProvider) GetTransactions(address string) (*model.TransactionRespo
 	close(resCh)
 	close(errCh)
 
-	return &model.TransactionResponse{
+	if successCount == 0 && failCount > 0 {
+		return nil, errors.New("all providers failed")
+	}
+
+	return &types.TransactionResponse{
 		Id: 1,
 		Result: struct {
-			Transactions []model.Transaction `json:"transactions"`
+			Transactions []types.Transaction `json:"transactions"`
 		}{
 			Transactions: allTxs,
 		},

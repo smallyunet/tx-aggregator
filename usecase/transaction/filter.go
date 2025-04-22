@@ -3,14 +3,14 @@ package transaction
 import (
 	"sort"
 	"strings"
-	"tx-aggregator/internal/chainmeta"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
+	"tx-aggregator/utils"
 )
 
 // FilterTransactionsByInvolvedAddress filters transactions to only include those where the address
 // is either the sender or the receiver.
-func FilterTransactionsByInvolvedAddress(resp *model.TransactionResponse, params *model.TransactionQueryParams) *model.TransactionResponse {
-	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
+func FilterTransactionsByInvolvedAddress(resp *types.TransactionResponse, params *types.TransactionQueryParams) *types.TransactionResponse {
+	filtered := make([]types.Transaction, 0, len(resp.Result.Transactions))
 	addrLower := strings.ToLower(params.Address)
 	tokenAddrLower := strings.ToLower(params.TokenAddress)
 
@@ -25,8 +25,8 @@ func FilterTransactionsByInvolvedAddress(resp *model.TransactionResponse, params
 }
 
 // FilterTransactionsByTokenAddress filters transactions to only include those with the specified token address.
-func FilterTransactionsByTokenAddress(resp *model.TransactionResponse, params *model.TransactionQueryParams) *model.TransactionResponse {
-	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
+func FilterTransactionsByTokenAddress(resp *types.TransactionResponse, params *types.TransactionQueryParams) *types.TransactionResponse {
+	filtered := make([]types.Transaction, 0, len(resp.Result.Transactions))
 	tokenAddrLower := strings.ToLower(params.TokenAddress)
 
 	for _, tx := range resp.Result.Transactions {
@@ -40,8 +40,8 @@ func FilterTransactionsByTokenAddress(resp *model.TransactionResponse, params *m
 }
 
 // FilterTransactionsByCoinType filters transactions to only include those with the specified coin type.
-func FilterTransactionsByCoinType(resp *model.TransactionResponse, coinType int) *model.TransactionResponse {
-	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
+func FilterTransactionsByCoinType(resp *types.TransactionResponse, coinType int) *types.TransactionResponse {
+	filtered := make([]types.Transaction, 0, len(resp.Result.Transactions))
 
 	for _, tx := range resp.Result.Transactions {
 		if tx.CoinType == coinType {
@@ -54,7 +54,7 @@ func FilterTransactionsByCoinType(resp *model.TransactionResponse, coinType int)
 }
 
 // FilterTransactionsByChainNames filters transactions to only include those with the specified chain IDs.
-func FilterTransactionsByChainNames(resp *model.TransactionResponse, chainNames []string) *model.TransactionResponse {
+func FilterTransactionsByChainNames(resp *types.TransactionResponse, chainNames []string) *types.TransactionResponse {
 	if len(chainNames) == 0 {
 		return resp
 	}
@@ -62,11 +62,11 @@ func FilterTransactionsByChainNames(resp *model.TransactionResponse, chainNames 
 	// Use a set for fast lookup
 	chainIDSet := make(map[int64]struct{}, len(chainNames))
 	for _, name := range chainNames {
-		id, _ := chainmeta.ChainIDByName(name)
+		id, _ := utils.ChainIDByName(name)
 		chainIDSet[id] = struct{}{}
 	}
 
-	filtered := make([]model.Transaction, 0, len(resp.Result.Transactions))
+	filtered := make([]types.Transaction, 0, len(resp.Result.Transactions))
 	for _, tx := range resp.Result.Transactions {
 		if _, ok := chainIDSet[tx.ChainID]; ok {
 			filtered = append(filtered, tx)
@@ -79,7 +79,7 @@ func FilterTransactionsByChainNames(resp *model.TransactionResponse, chainNames 
 
 // SortTransactionResponseByHeightAndIndex sorts transactions by block height and txIndex.
 // If heights are the same, it sorts by txIndex in ascending order.
-func SortTransactionResponseByHeightAndIndex(resp *model.TransactionResponse, ascending bool) {
+func SortTransactionResponseByHeightAndIndex(resp *types.TransactionResponse, ascending bool) {
 	if resp == nil || len(resp.Result.Transactions) == 0 {
 		return
 	}
@@ -103,7 +103,7 @@ func SortTransactionResponseByHeightAndIndex(resp *model.TransactionResponse, as
 }
 
 // LimitTransactions limits the number of transactions to a maximum count.
-func LimitTransactions(resp *model.TransactionResponse, max int) *model.TransactionResponse {
+func LimitTransactions(resp *types.TransactionResponse, max int) *types.TransactionResponse {
 	txs := resp.Result.Transactions
 	if len(txs) > max {
 		resp.Result.Transactions = txs[:max]
@@ -113,9 +113,9 @@ func LimitTransactions(resp *model.TransactionResponse, max int) *model.Transact
 
 // SetServerChainNames sets the ServerChainName field for each transaction
 // based on the chain ID using the configured chain name mappings.
-func SetServerChainNames(resp *model.TransactionResponse) *model.TransactionResponse {
+func SetServerChainNames(resp *types.TransactionResponse) *types.TransactionResponse {
 	for i, tx := range resp.Result.Transactions {
-		name, _ := chainmeta.ChainNameByID(tx.ChainID)
+		name, _ := utils.ChainNameByID(tx.ChainID)
 		resp.Result.Transactions[i].ServerChainName = name
 	}
 	return resp

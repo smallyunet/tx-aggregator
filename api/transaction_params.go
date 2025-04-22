@@ -2,20 +2,18 @@ package api
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"sort"
 	"strings"
-	"tx-aggregator/internal/chainmeta"
-
-	"github.com/gofiber/fiber/v2"
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
 // parseTransactionQueryParams parses and validates query parameters from the HTTP request context.
 // Returns TransactionQueryParams struct and error if validation fails.
-func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams, error) {
+func parseTransactionQueryParams(ctx *fiber.Ctx) (*types.TransactionQueryParams, error) {
 	address := utils.GetInsensitiveQuery(ctx, "address")
 	if address == "" {
 		return nil, fmt.Errorf("address parameter is required")
@@ -34,11 +32,11 @@ func parseTransactionQueryParams(ctx *fiber.Ctx) (*model.TransactionQueryParams,
 	tokenAddress := strings.ToLower(utils.GetInsensitiveQuery(ctx, "tokenAddress"))
 	if tokenAddress != "" &&
 		!utils.IsValidEthereumAddress(tokenAddress) &&
-		tokenAddress != model.NativeTokenName {
+		tokenAddress != types.NativeTokenName {
 		return nil, fmt.Errorf("invalid token address: %s", tokenAddress)
 	}
 
-	params := &model.TransactionQueryParams{
+	params := &types.TransactionQueryParams{
 		Address:      strings.ToLower(address),
 		TokenAddress: tokenAddress,
 		ChainNames:   validChainNames,
@@ -69,7 +67,7 @@ func parseAndValidateChainNames(rawChainNames string) ([]string, error) {
 
 		for _, name := range inputChainNames {
 			normalized := strings.ToUpper(strings.TrimSpace(name))
-			if _, err := chainmeta.ChainIDByName(normalized); err == nil {
+			if _, err := utils.ChainIDByName(normalized); err == nil {
 				validChainNames = append(validChainNames, normalized)
 			} else {
 				invalidChainNames = append(invalidChainNames, normalized)

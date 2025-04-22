@@ -5,15 +5,15 @@ import (
 	"strconv"
 	"strings"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutNormalTx retrieves normal transactions from the Blockscout endpoint:
 // GET /addresses/{address}/transactions
-func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.BlockscoutTransactionResponse, error) {
+func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*types.BlockscoutTransactionResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
-	var result model.BlockscoutTransactionResponse
+	var result types.BlockscoutTransactionResponse
 	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.normalTx", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
@@ -23,28 +23,28 @@ func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.Blo
 // transformBlockscoutNormalTx is the initial conversion of Blockscout normal transactions response to []model.Transaction.
 // This function does NOT perform ERC20 approve detection—only base transaction fields are handled.
 func (t *BlockscoutProvider) transformBlockscoutNormalTx(
-	resp *model.BlockscoutTransactionResponse,
+	resp *types.BlockscoutTransactionResponse,
 	address string,
-	logsMap map[string][]model.BlockscoutLog, // May be nil on first pass
-) []model.Transaction {
+	logsMap map[string][]types.BlockscoutLog, // May be nil on first pass
+) []types.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
 		logger.Log.Warn().Msg("No normal transactions to transform from Blockscout")
 		return nil
 	}
 
-	var transactions []model.Transaction
+	var transactions []types.Transaction
 
 	for _, tx := range resp.Items {
 		// Determine transaction status
-		state := model.TxStateFail
+		state := types.TxStateFail
 		if strings.EqualFold(tx.Status, "ok") {
-			state = model.TxStateSuccess
+			state = types.TxStateSuccess
 		}
 
 		// Determine transaction direction
-		tranType := model.TransTypeOut
+		tranType := types.TransTypeOut
 		if strings.EqualFold(tx.To.Hash, address) {
-			tranType = model.TransTypeIn
+			tranType = types.TransTypeIn
 		}
 
 		// Parse timestamp
@@ -52,7 +52,7 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 
 		// Normalize values
 		amountRaw, err := utils.NormalizeNumericString(tx.Value)
-		amount := utils.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		amount := utils.DivideByDecimals(amountRaw, types.NativeDefaultDecimals)
 		gasUsed, err := utils.NormalizeNumericString(tx.GasUsed)
 		gasLimit, err := utils.NormalizeNumericString(tx.GasLimit)
 		gasPrice, err := utils.NormalizeNumericString(tx.GasPrice)
@@ -65,7 +65,7 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 		}
 
 		// Construct the transaction
-		transaction := model.Transaction{
+		transaction := types.Transaction{
 			ChainID:          t.chainID,
 			TokenID:          0,
 			State:            state,
@@ -81,10 +81,10 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 			GasLimit:         gasLimit,
 			GasPrice:         gasPrice,
 			Nonce:            nonce,
-			Type:             model.TxTypeUnknown,  // Default type for native transfer
-			CoinType:         model.CoinTypeNative, // Native coin
+			Type:             types.TxTypeUnknown,  // Default type for native transfer
+			CoinType:         types.CoinTypeNative, // Native coin
 			TokenDisplayName: "",
-			Decimals:         model.NativeDefaultDecimals,
+			Decimals:         types.NativeDefaultDecimals,
 			CreatedTime:      unixTime,
 			ModifiedTime:     unixTime,
 			TranType:         tranType,
@@ -102,10 +102,10 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 // to detect if any are "approve" type (or other ERC-20 events) by scanning the logs map.
 // `logsMap` is keyed by tx hash => slice of BlockscoutLog.
 func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
-	normalTxs []model.Transaction,
-	logsMap map[string][]model.BlockscoutLog,
+	normalTxs []types.Transaction,
+	logsMap map[string][]types.BlockscoutLog,
 	address string,
-) []model.Transaction {
+) []types.Transaction {
 
 	for i, tx := range normalTxs {
 		// Does this transaction have logs in the map?
@@ -116,7 +116,7 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 		}
 
 		// We’ll see if any log indicates a recognized ERC-20 event
-		var finalTxType int = model.TxTypeUnknown
+		var finalTxType int = types.TxTypeUnknown
 		var finalTokenAddr, finalApproveVal string
 
 		for _, lg := range logsForTx {
@@ -128,7 +128,7 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 				lg.Data,
 			)
 
-			if txType != model.TxTypeUnknown {
+			if txType != types.TxTypeUnknown {
 				finalTxType = txType
 				finalTokenAddr = tokenAddr
 				finalApproveVal = approveValue
@@ -140,9 +140,9 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 		}
 
 		// If we recognized an ERC-20 event, update the transaction
-		if finalTxType != model.TxTypeUnknown {
+		if finalTxType != types.TxTypeUnknown {
 			// If it’s an Approval, store the approval value
-			if finalTxType == model.TxTypeApprove {
+			if finalTxType == types.TxTypeApprove {
 				normalTxs[i].ApproveShow = finalApproveVal
 			}
 

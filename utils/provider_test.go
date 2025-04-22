@@ -6,7 +6,7 @@ import (
 	"tx-aggregator/utils"
 
 	"github.com/stretchr/testify/assert"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 )
 
 func TestDivideByDecimals(t *testing.T) {
@@ -58,17 +58,17 @@ func TestDetectERC20Event(t *testing.T) {
 	unknownTopic := []string{"0xdeadbeef"}
 
 	txType, addr, val := utils.DetectERC20Event("0xABC", transferTopic, "")
-	assert.Equal(t, model.TxTypeTransfer, txType)
+	assert.Equal(t, types.TxTypeTransfer, txType)
 	assert.Equal(t, "0xabc", addr)
 	assert.Equal(t, "", val)
 
 	txType, addr, val = utils.DetectERC20Event("0xDEF", approveTopic, "0x01")
-	assert.Equal(t, model.TxTypeApprove, txType)
+	assert.Equal(t, types.TxTypeApprove, txType)
 	assert.Equal(t, "0xdef", addr)
 	assert.Equal(t, "0x01", val)
 
 	txType, addr, val = utils.DetectERC20Event("0xGHI", unknownTopic, "")
-	assert.Equal(t, model.TxTypeUnknown, txType)
+	assert.Equal(t, types.TxTypeUnknown, txType)
 	assert.Equal(t, "", addr)
 	assert.Equal(t, "", val)
 }
@@ -120,17 +120,17 @@ func TestParseBlockscoutTimestampToUnix(t *testing.T) {
 }
 
 func TestMergeLogMaps(t *testing.T) {
-	src := map[string][]model.BlockscoutLog{
+	src := map[string][]types.BlockscoutLog{
 		"tx1": {
-			{Address: model.BlockscoutAddressDetails{Hash: "0x1"}},
+			{Address: types.BlockscoutAddressDetails{Hash: "0x1"}},
 		},
 	}
-	dst := map[string][]model.BlockscoutLog{
+	dst := map[string][]types.BlockscoutLog{
 		"tx1": {
-			{Address: model.BlockscoutAddressDetails{Hash: "0x2"}},
+			{Address: types.BlockscoutAddressDetails{Hash: "0x2"}},
 		},
 		"tx2": {
-			{Address: model.BlockscoutAddressDetails{Hash: "0x3"}},
+			{Address: types.BlockscoutAddressDetails{Hash: "0x3"}},
 		},
 	}
 
@@ -144,7 +144,7 @@ func TestMergeLogMaps(t *testing.T) {
 }
 
 func TestPatchTokenTransactionsWithNormalTxInfo(t *testing.T) {
-	normal := model.Transaction{
+	normal := types.Transaction{
 		Hash:      "0xabc",
 		GasLimit:  "21000",
 		GasUsed:   "20000",
@@ -153,10 +153,10 @@ func TestPatchTokenTransactionsWithNormalTxInfo(t *testing.T) {
 		State:     1,
 		BlockHash: "0xblock",
 	}
-	tokenTxs := []model.Transaction{
+	tokenTxs := []types.Transaction{
 		{Hash: "0xabc"},
 	}
-	result := utils.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, []model.Transaction{normal})
+	result := utils.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, []types.Transaction{normal})
 	assert.Equal(t, "21000", result[0].GasLimit)
 	assert.Equal(t, "20000", result[0].GasUsed)
 	assert.Equal(t, "1000000000", result[0].GasPrice)

@@ -1,8 +1,8 @@
 package transaction
 
-import "tx-aggregator/model"
+import "tx-aggregator/types"
 
 // ServiceInterface defines the interface for transaction service
 type ServiceInterface interface {
-	GetTransactions(params *model.TransactionQueryParams) (*model.TransactionResponse, error)
+	GetTransactions(params *types.TransactionQueryParams) (*types.TransactionResponse, error)
 }

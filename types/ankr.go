@@ -1,4 +1,4 @@
-package model
+package types
 
 // AnkrTransactionRequest represents the request structure for Ankr API transaction queries
 type AnkrTransactionRequest struct {

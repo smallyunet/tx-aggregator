@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strings"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutTokenTransfers retrieves token transfers from Blockscout:
 // GET /addresses/{address}/token-transfers
-func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*model.BlockscoutTokenTransferResponse, error) {
+func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*types.BlockscoutTokenTransferResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/token-transfers?limit=%d", t.config.URL, address, t.config.RequestPageSize)
-	var result model.BlockscoutTokenTransferResponse
+	var result types.BlockscoutTokenTransferResponse
 	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.tokenTransfers", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
@@ -21,26 +21,26 @@ func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*mod
 
 // / transformBlockscoutTokenTransfers converts Blockscout token transfers into []model.Transaction.
 func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
-	resp *model.BlockscoutTokenTransferResponse,
+	resp *types.BlockscoutTokenTransferResponse,
 	address string,
-) []model.Transaction {
+) []types.Transaction {
 	if resp == nil || len(resp.Items) == 0 {
 		logger.Log.Warn().Msg("No token transfers to transform from Blockscout")
 		return nil
 	}
 
-	var transactions []model.Transaction
+	var transactions []types.Transaction
 
 	for _, tt := range resp.Items {
 		// Determine transaction direction
-		tranType := model.TransTypeOut
+		tranType := types.TransTypeOut
 		if strings.EqualFold(tt.To.Hash, address) {
-			tranType = model.TransTypeIn
+			tranType = types.TransTypeIn
 		}
 
 		// Parse timestamp and decimals
 		unixTime := utils.ParseBlockscoutTimestampToUnix(tt.Timestamp)
-		decimals := utils.ParseStringToInt64OrDefault(tt.Token.Decimals, model.NativeDefaultDecimals) // Default to 18 if missing
+		decimals := utils.ParseStringToInt64OrDefault(tt.Token.Decimals, types.NativeDefaultDecimals) // Default to 18 if missing
 		amountRaw, err := utils.NormalizeNumericString(tt.Total.Value)
 		if err != nil {
 			logger.Log.Error().
@@ -51,10 +51,10 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 		amount := utils.DivideByDecimals(amountRaw, int(decimals))
 
 		// Build transaction object
-		transaction := model.Transaction{
+		transaction := types.Transaction{
 			ChainID:          t.chainID,
 			TokenID:          0,
-			State:            model.TxStateSuccess, // Token transfers are assumed successful
+			State:            types.TxStateSuccess, // Token transfers are assumed successful
 			Height:           tt.BlockNumber,
 			Hash:             tt.TransactionHash,
 			BlockHash:        tt.BlockHash,
@@ -67,8 +67,8 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 			GasLimit:         "",                   // Not provided
 			GasPrice:         "",                   // Not provided
 			Nonce:            "",                   // Not provided
-			Type:             model.TxTypeTransfer, // Standard token transfer
-			CoinType:         model.CoinTypeToken,  // Token type
+			Type:             types.TxTypeTransfer, // Standard token transfer
+			CoinType:         types.CoinTypeToken,  // Token type
 			TokenDisplayName: tt.Token.Name,
 			Decimals:         decimals,
 			CreatedTime:      unixTime,

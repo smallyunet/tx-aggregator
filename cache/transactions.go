@@ -6,17 +6,17 @@ import (
 	"github.com/redis/go-redis/v9"
 	"sync"
 	"time"
-	"tx-aggregator/internal/chainmeta"
+	"tx-aggregator/utils"
 
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 )
 
 // ParseTxAndSaveToCache groups a batch of transactions and writes them to
 // Redis using pipelines / bulk commands for maximum throughput.
 func (r *RedisCache) ParseTxAndSaveToCache(
-	resp *model.TransactionResponse,
+	resp *types.TransactionResponse,
 	address string,
 ) error {
 	if resp == nil || len(resp.Result.Transactions) == 0 {
@@ -33,26 +33,26 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 	// -----------------------------------------------------------------------
 	// 1. Grouping phase
 	// -----------------------------------------------------------------------
-	chainTxMap := make(map[int64][]model.Transaction)
-	nativeTxMap := make(map[string][]model.Transaction)
-	tokenTxMap := make(map[string][]model.Transaction)
+	chainTxMap := make(map[int64][]types.Transaction)
+	nativeTxMap := make(map[string][]types.Transaction)
+	tokenTxMap := make(map[string][]types.Transaction)
 	tokenSets := make(map[int64]map[string]struct{})
 
 	for _, tx := range resp.Result.Transactions {
 		chainTxMap[tx.ChainID] = append(chainTxMap[tx.ChainID], tx)
 
-		chainName, err := chainmeta.ChainNameByID(tx.ChainID)
+		chainName, err := utils.ChainNameByID(tx.ChainID)
 		if err != nil {
 			logger.Log.Error().Err(err).Int64("chainID", tx.ChainID).Msg("chain name not found")
 			continue
 		}
 
-		if tx.CoinType == model.CoinTypeNative {
+		if tx.CoinType == types.CoinTypeNative {
 			key := formatNativeKey(address, chainName)
 			nativeTxMap[key] = append(nativeTxMap[key], tx)
 		}
 
-		if tx.CoinType == model.CoinTypeToken && tx.TokenAddress != "" {
+		if tx.CoinType == types.CoinTypeToken && tx.TokenAddress != "" {
 			key := formatTokenKey(address, chainName, tx.TokenAddress)
 			tokenTxMap[key] = append(tokenTxMap[key], tx)
 
@@ -70,7 +70,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 	errCh := make(chan error, 8)
 
 	// Helper to schedule JSON‑encoded pipelines.
-	scheduleJSON := func(key string, txs []model.Transaction, label string) {
+	scheduleJSON := func(key string, txs []types.Transaction, label string) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -85,7 +85,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 
 	// Chain‑level sets (address‑chain).
 	for chainID, txs := range chainTxMap {
-		chainName, _ := chainmeta.ChainNameByID(chainID)
+		chainName, _ := utils.ChainNameByID(chainID)
 		scheduleJSON(formatChainKey(address, chainName), txs, "chainTx")
 	}
 
@@ -103,7 +103,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 		go func(chainID int64, tmap map[string]struct{}) {
 			defer wg.Done()
 
-			chainName, _ := chainmeta.ChainNameByID(chainID)
+			chainName, _ := utils.ChainNameByID(chainID)
 			setKey := formatTokenSetKey(address, chainName)
 
 			// Map → slice.
@@ -135,10 +135,10 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 
 // QueryTxFromCache (unchanged except for minor style tweaks).
 func (r *RedisCache) QueryTxFromCache(
-	req *model.TransactionQueryParams,
-) (*model.TransactionResponse, error) {
+	req *types.TransactionQueryParams,
+) (*types.TransactionResponse, error) {
 	var (
-		out     = new(model.TransactionResponse)
+		out     = new(types.TransactionResponse)
 		mu      sync.Mutex
 		wg      sync.WaitGroup
 		errChan = make(chan error, len(req.ChainNames))
@@ -167,7 +167,7 @@ func (r *RedisCache) QueryTxFromCache(
 				return
 			}
 
-			var txs []model.Transaction
+			var txs []types.Transaction
 			if uErr := json.Unmarshal([]byte(val), &txs); uErr != nil {
 				errChan <- uErr
 				return

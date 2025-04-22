@@ -1,4 +1,4 @@
-package chainmeta
+package utils
 
 import (
 	"fmt"

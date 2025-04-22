@@ -8,15 +8,15 @@ import (
 	"sync"
 	"time"
 	"tx-aggregator/logger"
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutLogs retrieves logs from Blockscout:
 // GET /addresses/{address}/logs
-func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.BlockscoutLogResponse, error) {
+func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*types.BlockscoutLogResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/logs?limit=%d", t.config.URL, address, t.config.RequestPageSize)
-	var result model.BlockscoutLogResponse
+	var result types.BlockscoutLogResponse
 	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.logs", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.Blocksc
 // ───────────────────────────────────────────────────────────────────────────────
 func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
 	blocks map[int64]struct{},
-) (map[string][]model.BlockscoutLog, error) {
+) (map[string][]types.BlockscoutLog, error) {
 
 	if len(blocks) == 0 {
 		return nil, nil
@@ -61,7 +61,7 @@ func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
 		shards = append(shards, buf)
 	}
 
-	merged := make(map[string][]model.BlockscoutLog, 1024) // final result
+	merged := make(map[string][]types.BlockscoutLog, 1024) // final result
 	var mu sync.Mutex                                      // guards merged
 
 	// Cancellation context for all HTTP calls
@@ -95,8 +95,8 @@ func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
 				})
 			}
 
-			// ─────────────── Send HTTP POST & parse into model structs ─────────
-			var rpcResponses []model.RpcReceiptResponse
+			// ─────────────── Send HTTP POST & parse into types structs ─────────
+			var rpcResponses []types.RpcReceiptResponse
 			if err := utils.DoHttpRequestWithLogging(
 				"POST",
 				fmt.Sprintf("blockscout.rpcReceipts.shard.%d", len(shard)),
@@ -109,7 +109,7 @@ func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
 			}
 
 			// ─────────── Convert RpcReceiptLog → BlockscoutLog ────────────────
-			local := make(map[string][]model.BlockscoutLog, len(rpcResponses)*4)
+			local := make(map[string][]types.BlockscoutLog, len(rpcResponses)*4)
 
 			for _, resp := range rpcResponses {
 				for _, receipt := range resp.Result {
@@ -131,8 +131,8 @@ func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
 							}
 						}
 
-						log := model.BlockscoutLog{
-							Address: model.BlockscoutAddressDetails{
+						log := types.BlockscoutLog{
+							Address: types.BlockscoutAddressDetails{
 								Hash: l.Address,
 							},
 							BlockHash:       l.BlockHash,
@@ -172,8 +172,8 @@ func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
 }
 
 // indexBlockscoutLogsByTxHash stores each log in a map keyed by transaction hash.
-func (t *BlockscoutProvider) indexBlockscoutLogsByTxHash(resp *model.BlockscoutLogResponse) map[string][]model.BlockscoutLog {
-	logsMap := make(map[string][]model.BlockscoutLog)
+func (t *BlockscoutProvider) indexBlockscoutLogsByTxHash(resp *types.BlockscoutLogResponse) map[string][]types.BlockscoutLog {
+	logsMap := make(map[string][]types.BlockscoutLog)
 	if resp == nil || len(resp.Items) == 0 {
 		return logsMap
 	}

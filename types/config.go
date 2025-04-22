@@ -1,4 +1,4 @@
-package config
+package types
 
 // Config represents the application configuration structure
 type Config struct {

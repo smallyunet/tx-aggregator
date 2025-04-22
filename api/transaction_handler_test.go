@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"tx-aggregator/model"
+	"tx-aggregator/types"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
@@ -19,12 +19,12 @@ type MockService struct {
 	mock.Mock
 }
 
-func (m *MockService) GetTransactions(params *model.TransactionQueryParams) (*model.TransactionResponse, error) {
+func (m *MockService) GetTransactions(params *types.TransactionQueryParams) (*types.TransactionResponse, error) {
 	args := m.Called(params)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*model.TransactionResponse), args.Error(1)
+	return args.Get(0).(*types.TransactionResponse), args.Error(1)
 }
 
 // setupTestApp initializes Fiber app and registers the handler for testing.
@@ -85,11 +85,11 @@ func TestGetTransactions_InvalidParams(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
-			var body model.TransactionResponse
+			var body types.TransactionResponse
 			err = json.NewDecoder(resp.Body).Decode(&body)
 			assert.NoError(t, err)
-			assert.Equal(t, model.CodeInvalidParam, body.Code)
-			assert.Equal(t, model.GetMessageByCode(model.CodeInvalidParam), body.Message)
+			assert.Equal(t, types.CodeInvalidParam, body.Code)
+			assert.Equal(t, types.GetMessageByCode(types.CodeInvalidParam), body.Message)
 		})
 	}
 }
@@ -99,7 +99,7 @@ func TestGetTransactions_ServiceError(t *testing.T) {
 	mockService := new(MockService)
 	app := setupTestApp(mockService)
 
-	paramsMatcher := mock.MatchedBy(func(p *model.TransactionQueryParams) bool {
+	paramsMatcher := mock.MatchedBy(func(p *types.TransactionQueryParams) bool {
 		return p != nil && strings.EqualFold(p.Address, validAddr)
 	})
 
@@ -112,11 +112,11 @@ func TestGetTransactions_ServiceError(t *testing.T) {
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
-	var body model.TransactionResponse
+	var body types.TransactionResponse
 	err = json.NewDecoder(resp.Body).Decode(&body)
 	assert.NoError(t, err)
-	assert.Equal(t, model.CodeInternalError, body.Code)
-	assert.Equal(t, model.GetMessageByCode(model.CodeInternalError), body.Message)
+	assert.Equal(t, types.CodeInternalError, body.Code)
+	assert.Equal(t, types.GetMessageByCode(types.CodeInternalError), body.Message)
 }
 
 // TestGetTransactions_Success tests successful retrieval from service.
@@ -124,12 +124,12 @@ func TestGetTransactions_Success(t *testing.T) {
 	mockService := new(MockService)
 	app := setupTestApp(mockService)
 
-	expected := &model.TransactionResponse{
-		Code:    model.CodeSuccess,
-		Message: model.GetMessageByCode(model.CodeSuccess),
+	expected := &types.TransactionResponse{
+		Code:    types.CodeSuccess,
+		Message: types.GetMessageByCode(types.CodeSuccess),
 	}
 
-	paramsMatcher := mock.MatchedBy(func(p *model.TransactionQueryParams) bool {
+	paramsMatcher := mock.MatchedBy(func(p *types.TransactionQueryParams) bool {
 		return p != nil && strings.EqualFold(p.Address, validAddr)
 	})
 
@@ -142,7 +142,7 @@ func TestGetTransactions_Success(t *testing.T) {
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
-	var body model.TransactionResponse
+	var body types.TransactionResponse
 	err = json.NewDecoder(resp.Body).Decode(&body)
 	assert.NoError(t, err)
 	assert.Equal(t, expected.Code, body.Code)

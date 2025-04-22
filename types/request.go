@@ -1,4 +1,4 @@
-package model
+package types
 
 // TransactionRequest defines query parameters from HTTP request
 type TransactionRequest struct {
