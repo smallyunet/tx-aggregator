@@ -7,6 +7,7 @@ import (
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
 	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 )
 
 // AnkrProvider implements the Provider interface for interacting with Ankr's blockchain API
@@ -80,7 +81,7 @@ func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionRespon
 	}
 
 	// Patch token transfers using matching normal transactions
-	tokenTxs = provider.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
+	tokenTxs = utils.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
 
 	// Merge the final results
 	transactions := append(normalTxs, tokenTxs...)
@@ -104,7 +105,7 @@ func (a *AnkrProvider) GetTransactions(address string) (*model.TransactionRespon
 
 func (p *AnkrProvider) sendRequest(requestBody interface{}, result interface{}) error {
 	fullURL := fmt.Sprintf("%s/%s", p.url, p.apiKey)
-	return provider.DoHttpRequestWithLogging("POST", "ankr", fullURL, requestBody, map[string]string{
+	return utils.DoHttpRequestWithLogging("POST", "ankr", fullURL, requestBody, map[string]string{
 		"Content-Type": "application/json",
 		"x-api-key":    p.apiKey,
 	}, result)

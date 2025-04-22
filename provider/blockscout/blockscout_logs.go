@@ -9,7 +9,7 @@ import (
 	"time"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutLogs retrieves logs from Blockscout:
@@ -17,7 +17,7 @@ import (
 func (t *BlockscoutProvider) fetchBlockscoutLogs(address string) (*model.BlockscoutLogResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/logs?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	var result model.BlockscoutLogResponse
-	if err := provider.DoHttpRequestWithLogging("GET", "blockscout.logs", url, nil, nil, &result); err != nil {
+	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.logs", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -97,7 +97,7 @@ func (p *BlockscoutProvider) fetchLogsByBlockFromRPC(
 
 			// ─────────────── Send HTTP POST & parse into model structs ─────────
 			var rpcResponses []model.RpcReceiptResponse
-			if err := provider.DoHttpRequestWithLogging(
+			if err := utils.DoHttpRequestWithLogging(
 				"POST",
 				fmt.Sprintf("blockscout.rpcReceipts.shard.%d", len(shard)),
 				p.config.RPCURL,

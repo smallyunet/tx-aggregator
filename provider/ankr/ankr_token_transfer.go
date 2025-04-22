@@ -6,7 +6,7 @@ import (
 	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 )
 
 // GetTokenTransfers retrieves token transfer events from Ankr for the given address
@@ -75,7 +75,7 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 			tranType = model.TransTypeIn
 		}
 
-		balance, err := provider.MultiplyByDecimals(tr.Value, int(tr.TokenDecimals))
+		balance, err := utils.MultiplyByDecimals(tr.Value, int(tr.TokenDecimals))
 		if err != nil {
 			logger.Log.Error().
 				Err(err).

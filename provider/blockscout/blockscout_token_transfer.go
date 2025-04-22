@@ -5,7 +5,7 @@ import (
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutTokenTransfers retrieves token transfers from Blockscout:
@@ -13,7 +13,7 @@ import (
 func (t *BlockscoutProvider) fetchBlockscoutTokenTransfers(address string) (*model.BlockscoutTokenTransferResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/token-transfers?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	var result model.BlockscoutTokenTransferResponse
-	if err := provider.DoHttpRequestWithLogging("GET", "blockscout.tokenTransfers", url, nil, nil, &result); err != nil {
+	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.tokenTransfers", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -39,16 +39,16 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 		}
 
 		// Parse timestamp and decimals
-		unixTime := provider.ParseBlockscoutTimestampToUnix(tt.Timestamp)
-		decimals := provider.ParseStringToInt64OrDefault(tt.Token.Decimals, model.NativeDefaultDecimals) // Default to 18 if missing
-		amountRaw, err := provider.NormalizeNumericString(tt.Total.Value)
+		unixTime := utils.ParseBlockscoutTimestampToUnix(tt.Timestamp)
+		decimals := utils.ParseStringToInt64OrDefault(tt.Token.Decimals, model.NativeDefaultDecimals) // Default to 18 if missing
+		amountRaw, err := utils.NormalizeNumericString(tt.Total.Value)
 		if err != nil {
 			logger.Log.Error().
 				Err(err).
 				Str("address", address).
 				Msg("Failed to normalize token transfer amount")
 		}
-		amount := provider.DivideByDecimals(amountRaw, int(decimals))
+		amount := utils.DivideByDecimals(amountRaw, int(decimals))
 
 		// Build transaction object
 		transaction := model.Transaction{

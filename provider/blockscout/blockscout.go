@@ -14,7 +14,7 @@ import (
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -97,7 +97,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 			return err
 		}
 		blockscoutLogs := p.indexBlockscoutLogsByTxHash(resp)
-		provider.MergeLogMaps(allLogs, blockscoutLogs)
+		utils.MergeLogMaps(allLogs, blockscoutLogs)
 		return nil
 	})
 
@@ -121,7 +121,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 			// Log the error and continue using only Blockscout logs.
 			logger.Log.Warn().Err(fetchErr).Msg("Failed to fetch RPC logs")
 		} else {
-			provider.MergeLogMaps(allLogs, rpcLogs)
+			utils.MergeLogMaps(allLogs, rpcLogs)
 		}
 	}
 
@@ -131,7 +131,7 @@ func (p *BlockscoutProvider) GetTransactions(address string) (*model.Transaction
 	}
 
 	// Patch tokenTxs with gas info from normalTxs
-	tokenTxs = provider.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
+	tokenTxs = utils.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, normalTxs)
 
 	// Aggregate and return all transactions.
 	allTxs := append(normalTxs, tokenTxs...)

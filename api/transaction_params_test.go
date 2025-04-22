@@ -43,7 +43,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 			expectedResult: &model.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "",
-				ChainNames:   []string{"ETH", "BSC"},
+				ChainNames:   []string{"BSC", "ETH"}, // sorted
 			},
 		},
 		{
@@ -52,7 +52,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 			expectedResult: &model.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "",
-				ChainNames:   []string{"ETH", "BSC"},
+				ChainNames:   []string{"BSC", "ETH"}, // sorted
 			},
 		},
 		{
@@ -71,7 +71,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 			expectedResult: &model.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "native",
-				ChainNames:   []string{"ETH", "BSC"},
+				ChainNames:   []string{"BSC", "ETH"}, // sorted
 			},
 		},
 		{
@@ -80,7 +80,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 			expectedResult: &model.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "0x000000000000000000000000000000000000dead",
-				ChainNames:   []string{"ETH", "BSC"},
+				ChainNames:   []string{"BSC", "ETH"}, // sorted
 			},
 		},
 	}

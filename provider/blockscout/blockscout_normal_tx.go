@@ -6,7 +6,7 @@ import (
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutNormalTx retrieves normal transactions from the Blockscout endpoint:
@@ -14,7 +14,7 @@ import (
 func (t *BlockscoutProvider) fetchBlockscoutNormalTx(address string) (*model.BlockscoutTransactionResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	var result model.BlockscoutTransactionResponse
-	if err := provider.DoHttpRequestWithLogging("GET", "blockscout.normalTx", url, nil, nil, &result); err != nil {
+	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.normalTx", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -48,15 +48,15 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 		}
 
 		// Parse timestamp
-		unixTime := provider.ParseBlockscoutTimestampToUnix(tx.Timestamp)
+		unixTime := utils.ParseBlockscoutTimestampToUnix(tx.Timestamp)
 
 		// Normalize values
-		amountRaw, err := provider.NormalizeNumericString(tx.Value)
-		amount := provider.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
-		gasUsed, err := provider.NormalizeNumericString(tx.GasUsed)
-		gasLimit, err := provider.NormalizeNumericString(tx.GasLimit)
-		gasPrice, err := provider.NormalizeNumericString(tx.GasPrice)
-		nonce, err := provider.NormalizeNumericString(strconv.FormatInt(tx.Nonce, 10))
+		amountRaw, err := utils.NormalizeNumericString(tx.Value)
+		amount := utils.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		gasUsed, err := utils.NormalizeNumericString(tx.GasUsed)
+		gasLimit, err := utils.NormalizeNumericString(tx.GasLimit)
+		gasPrice, err := utils.NormalizeNumericString(tx.GasPrice)
+		nonce, err := utils.NormalizeNumericString(strconv.FormatInt(tx.Nonce, 10))
 		if err != nil {
 			logger.Log.Error().
 				Err(err).
@@ -122,7 +122,7 @@ func (b *BlockscoutProvider) transformBlockscoutNormalTxWithLogs(
 		for _, lg := range logsForTx {
 			// Our generic detection function:
 			// DetectERC20Event(contractAddress, topics, data)
-			txType, tokenAddr, approveValue := provider.DetectERC20Event(
+			txType, tokenAddr, approveValue := utils.DetectERC20Event(
 				lg.Address.Hash, // the contract address
 				lg.Topics,
 				lg.Data,

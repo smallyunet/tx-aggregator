@@ -5,7 +5,7 @@ import (
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 )
 
 // fetchBlockscoutInternalTx retrieves internal transactions from Blockscout:
@@ -13,7 +13,7 @@ import (
 func (t *BlockscoutProvider) fetchBlockscoutInternalTx(address string) (*model.BlockscoutInternalTxResponse, error) {
 	url := fmt.Sprintf("%s/addresses/%s/internal-transactions?limit=%d", t.config.URL, address, t.config.RequestPageSize)
 	var result model.BlockscoutInternalTxResponse
-	if err := provider.DoHttpRequestWithLogging("GET", "blockscout.internalTx", url, nil, nil, &result); err != nil {
+	if err := utils.DoHttpRequestWithLogging("GET", "blockscout.internalTx", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -40,7 +40,7 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 		}
 
 		// Parse timestamp to Unix time
-		unixTime := provider.ParseBlockscoutTimestampToUnix(itx.Timestamp)
+		unixTime := utils.ParseBlockscoutTimestampToUnix(itx.Timestamp)
 
 		// Safely extract from/to addresses
 		fromHash := ""
@@ -59,9 +59,9 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 		}
 
 		// Normalize gas limit (if provided)
-		gasLimit, err := provider.NormalizeNumericString(itx.GasLimit)
-		amountRaw, err := provider.NormalizeNumericString(itx.Value)
-		amount := provider.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		gasLimit, err := utils.NormalizeNumericString(itx.GasLimit)
+		amountRaw, err := utils.NormalizeNumericString(itx.Value)
+		amount := utils.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
 		if err != nil {
 			logger.Log.Error().
 				Err(err).

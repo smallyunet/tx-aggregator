@@ -6,7 +6,7 @@ import (
 	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
+	"tx-aggregator/utils"
 )
 
 // GetTransactionsByAddress retrieves normal transactions from Ankr for the given address
@@ -61,25 +61,25 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 
 	for _, tx := range resp.Result.Transactions {
 		chainID, _ := chainmeta.AnkrChainIDByName(tx.Blockchain)
-		height := provider.ParseStringToInt64OrDefault(tx.BlockNumber, 0)
-		timestamp := provider.ParseStringToInt64OrDefault(tx.Timestamp, 0)
-		txIndex := provider.ParseStringToInt64OrDefault(tx.TransactionIndex, 0)
+		height := utils.ParseStringToInt64OrDefault(tx.BlockNumber, 0)
+		timestamp := utils.ParseStringToInt64OrDefault(tx.Timestamp, 0)
+		txIndex := utils.ParseStringToInt64OrDefault(tx.TransactionIndex, 0)
 
 		// Determine transaction state
 		var state int
-		if provider.ParseStringToInt64OrDefault(tx.Status, 0) == model.TxStateSuccess {
+		if utils.ParseStringToInt64OrDefault(tx.Status, 0) == model.TxStateSuccess {
 			state = model.TxStateSuccess
 		} else {
 			state = model.TxStateFail
 		}
 
 		// Normalize values
-		amountRaw, err := provider.NormalizeNumericString(tx.Value)
-		amount := provider.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
-		gasLimit, err := provider.NormalizeNumericString(tx.Gas)
-		gasUsed, err := provider.NormalizeNumericString(tx.GasUsed)
-		gasPrice, err := provider.NormalizeNumericString(tx.GasPrice)
-		nonce, err := provider.NormalizeNumericString(tx.Nonce)
+		amountRaw, err := utils.NormalizeNumericString(tx.Value)
+		amount := utils.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		gasLimit, err := utils.NormalizeNumericString(tx.Gas)
+		gasUsed, err := utils.NormalizeNumericString(tx.GasUsed)
+		gasPrice, err := utils.NormalizeNumericString(tx.GasPrice)
+		nonce, err := utils.NormalizeNumericString(tx.Nonce)
 		if err != nil {
 			logger.Log.Error().
 				Err(err).
@@ -88,7 +88,7 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 		}
 
 		// Detect ERC20 type and approve value
-		txType, tokenAddr, approveValue := provider.DetectERC20TypeForAnkr(tx.Logs)
+		txType, tokenAddr, approveValue := utils.DetectERC20TypeForAnkr(tx.Logs)
 		approveShow := ""
 		if txType == model.TxTypeApprove {
 			approveShow = approveValue

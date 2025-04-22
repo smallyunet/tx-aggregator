@@ -1,12 +1,12 @@
-package provider_test
+package utils_test
 
 import (
 	"testing"
 	"time"
+	"tx-aggregator/utils"
 
 	"github.com/stretchr/testify/assert"
 	"tx-aggregator/model"
-	"tx-aggregator/provider"
 )
 
 func TestDivideByDecimals(t *testing.T) {
@@ -22,7 +22,7 @@ func TestDivideByDecimals(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := provider.DivideByDecimals(tt.value, tt.decimals)
+		result := utils.DivideByDecimals(tt.value, tt.decimals)
 		assert.Equal(t, tt.expected, result)
 	}
 }
@@ -41,14 +41,14 @@ func TestMultiplyByDecimals(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got, err := provider.MultiplyByDecimals(tt.value, tt.decimals)
+		got, err := utils.MultiplyByDecimals(tt.value, tt.decimals)
 		assert.NoError(t, err)
 		assert.Equal(t, tt.expected, got)
 	}
 }
 
 func TestMultiplyInvalidFraction(t *testing.T) {
-	_, err := provider.MultiplyByDecimals("0.0001", 2) // 4 fractional digits > 2
+	_, err := utils.MultiplyByDecimals("0.0001", 2) // 4 fractional digits > 2
 	assert.Error(t, err)
 }
 
@@ -57,17 +57,17 @@ func TestDetectERC20Event(t *testing.T) {
 	approveTopic := []string{"0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"}
 	unknownTopic := []string{"0xdeadbeef"}
 
-	txType, addr, val := provider.DetectERC20Event("0xABC", transferTopic, "")
+	txType, addr, val := utils.DetectERC20Event("0xABC", transferTopic, "")
 	assert.Equal(t, model.TxTypeTransfer, txType)
 	assert.Equal(t, "0xabc", addr)
 	assert.Equal(t, "", val)
 
-	txType, addr, val = provider.DetectERC20Event("0xDEF", approveTopic, "0x01")
+	txType, addr, val = utils.DetectERC20Event("0xDEF", approveTopic, "0x01")
 	assert.Equal(t, model.TxTypeApprove, txType)
 	assert.Equal(t, "0xdef", addr)
 	assert.Equal(t, "0x01", val)
 
-	txType, addr, val = provider.DetectERC20Event("0xGHI", unknownTopic, "")
+	txType, addr, val = utils.DetectERC20Event("0xGHI", unknownTopic, "")
 	assert.Equal(t, model.TxTypeUnknown, txType)
 	assert.Equal(t, "", addr)
 	assert.Equal(t, "", val)
@@ -93,7 +93,7 @@ func TestNormalizeNumericString(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got, err := provider.NormalizeNumericString(tt.input)
+		got, err := utils.NormalizeNumericString(tt.input)
 		if tt.isErr {
 			assert.Error(t, err, "input=%q expected an error", tt.input)
 		} else {
@@ -104,18 +104,18 @@ func TestNormalizeNumericString(t *testing.T) {
 }
 
 func TestParseStringToInt64OrDefault(t *testing.T) {
-	assert.Equal(t, int64(21000), provider.ParseStringToInt64OrDefault("21000", 0))
-	assert.Equal(t, int64(21000), provider.ParseStringToInt64OrDefault("0x5208", 0))
-	assert.Equal(t, int64(0), provider.ParseStringToInt64OrDefault("invalid", 0))
+	assert.Equal(t, int64(21000), utils.ParseStringToInt64OrDefault("21000", 0))
+	assert.Equal(t, int64(21000), utils.ParseStringToInt64OrDefault("0x5208", 0))
+	assert.Equal(t, int64(0), utils.ParseStringToInt64OrDefault("invalid", 0))
 }
 
 func TestParseBlockscoutTimestampToUnix(t *testing.T) {
 	ts := "2025-04-16T06:45:02.000000Z"
-	unix := provider.ParseBlockscoutTimestampToUnix(ts)
+	unix := utils.ParseBlockscoutTimestampToUnix(ts)
 	expected, _ := time.Parse(time.RFC3339Nano, ts)
 	assert.Equal(t, expected.Unix(), unix)
 
-	invalid := provider.ParseBlockscoutTimestampToUnix("invalid")
+	invalid := utils.ParseBlockscoutTimestampToUnix("invalid")
 	assert.Equal(t, int64(0), invalid)
 }
 
@@ -134,7 +134,7 @@ func TestMergeLogMaps(t *testing.T) {
 		},
 	}
 
-	provider.MergeLogMaps(dst, src)
+	utils.MergeLogMaps(dst, src)
 
 	assert.Len(t, dst["tx1"], 2)
 	assert.Equal(t, "0x2", dst["tx1"][0].Address.Hash)
@@ -156,7 +156,7 @@ func TestPatchTokenTransactionsWithNormalTxInfo(t *testing.T) {
 	tokenTxs := []model.Transaction{
 		{Hash: "0xabc"},
 	}
-	result := provider.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, []model.Transaction{normal})
+	result := utils.PatchTokenTransactionsWithNormalTxInfo(tokenTxs, []model.Transaction{normal})
 	assert.Equal(t, "21000", result[0].GasLimit)
 	assert.Equal(t, "20000", result[0].GasUsed)
 	assert.Equal(t, "1000000000", result[0].GasPrice)
