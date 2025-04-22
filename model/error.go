@@ -10,6 +10,7 @@ const (
 	CodeInvalidParam   = 1001 // Invalid input parameters
 	CodeInternalError  = 1002 // Internal server error
 	CodeProviderFailed = 1003 // Failed to get data from external provider
+	CodeTimeout        = 1004 // Request timed out
 )
 
 // CodeMessageMap maps error codes to their corresponding error messages
