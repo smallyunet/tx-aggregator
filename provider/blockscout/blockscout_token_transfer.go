@@ -40,7 +40,15 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 
 		// Parse timestamp and decimals
 		unixTime := provider.ParseBlockscoutTimestampToUnix(tt.Timestamp)
-		decimals := provider.ParseStringToInt64OrDefault(tt.Token.Decimals, 18) // Default to 18 if missing
+		decimals := provider.ParseStringToInt64OrDefault(tt.Token.Decimals, model.NativeDefaultDecimals) // Default to 18 if missing
+		amountRaw, err := provider.NormalizeNumericString(tt.Total.Value)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("address", address).
+				Msg("Failed to normalize token transfer amount")
+		}
+		amount := provider.DivideByDecimals(amountRaw, int(decimals))
 
 		// Build transaction object
 		transaction := model.Transaction{
@@ -53,7 +61,7 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 			FromAddress:      tt.From.Hash,
 			ToAddress:        tt.To.Hash,
 			TokenAddress:     tt.Token.Address,
-			Amount:           tt.Total.Value,
+			Amount:           amount,
 			GasUsed:          "",                   // Not provided
 			GasLimit:         "",                   // Not provided
 			GasPrice:         "",                   // Not provided

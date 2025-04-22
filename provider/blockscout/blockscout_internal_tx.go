@@ -59,7 +59,15 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 		}
 
 		// Normalize gas limit (if provided)
-		gasLimit, _ := provider.NormalizeNumericString(itx.GasLimit)
+		gasLimit, err := provider.NormalizeNumericString(itx.GasLimit)
+		amountRaw, err := provider.NormalizeNumericString(itx.Value)
+		amount := provider.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("address", address).
+				Msg("Failed to normalize internal transaction amount")
+		}
 
 		// Construct transaction object
 		transaction := model.Transaction{
@@ -72,7 +80,7 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 			FromAddress:      fromHash,
 			ToAddress:        toHash,
 			TokenAddress:     "",
-			Amount:           itx.Value,
+			Amount:           amount,
 			GasUsed:          "", // Not provided
 			GasLimit:         gasLimit,
 			GasPrice:         "",

@@ -74,11 +74,18 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 		}
 
 		// Normalize values
-		amount, _ := provider.NormalizeNumericString(tx.Value)
-		gasLimit, _ := provider.NormalizeNumericString(tx.Gas)
-		gasUsed, _ := provider.NormalizeNumericString(tx.GasUsed)
-		gasPrice, _ := provider.NormalizeNumericString(tx.GasPrice)
-		nonce, _ := provider.NormalizeNumericString(tx.Nonce)
+		amountRaw, err := provider.NormalizeNumericString(tx.Value)
+		amount := provider.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		gasLimit, err := provider.NormalizeNumericString(tx.Gas)
+		gasUsed, err := provider.NormalizeNumericString(tx.GasUsed)
+		gasPrice, err := provider.NormalizeNumericString(tx.GasPrice)
+		nonce, err := provider.NormalizeNumericString(tx.Nonce)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("address", address).
+				Msg("Failed to normalize transaction values")
+		}
 
 		// Detect ERC20 type and approve value
 		txType, tokenAddr, approveValue := provider.DetectERC20TypeForAnkr(tx.Logs)

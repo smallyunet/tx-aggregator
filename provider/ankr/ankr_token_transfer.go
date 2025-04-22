@@ -60,7 +60,13 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 	var transactions []model.Transaction
 
 	for _, tr := range resp.Result.Transfers {
-		chainID, _ := chainmeta.AnkrChainIDByName(tr.Blockchain)
+		chainID, err := chainmeta.AnkrChainIDByName(tr.Blockchain)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("blockchain", tr.Blockchain).
+				Msg("Failed to get chain ID from Ankr")
+		}
 
 		// Determine transaction direction
 		tranType := model.TransTypeOut

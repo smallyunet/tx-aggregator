@@ -3,6 +3,7 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -108,30 +109,38 @@ func MergeLogMaps(dst, src map[string][]model.BlockscoutLog) {
 	}
 }
 
-// NormalizeNumericString converts a numeric string (hex like "0x5208" or decimal like "21000")
-// into a standardized decimal string. Returns error for invalid input.
+// NormalizeNumericString converts a numeric string—either
+//   - hexadecimal (prefix "0x"/"0X"), or
+//   - decimal
+//
+// into a canonical decimal string with no leading zeros.
+//
+// Examples
+//
+//	"0x5208"         -> "21000"
+//	"21000"          -> "21000"
+//	"  12345  "      -> "12345"
 func NormalizeNumericString(input string) (string, error) {
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return "", errors.New("empty input string")
 	}
 
-	// Check if it's a hex string (starts with "0x" or "0X")
-	if strings.HasPrefix(input, "0x") || strings.HasPrefix(input, "0X") {
-		val, err := strconv.ParseUint(input[2:], 16, 64)
-		if err != nil {
-			return "", fmt.Errorf("invalid hex string: %w", err)
+	var z big.Int
+	switch {
+	case strings.HasPrefix(input, "0x") || strings.HasPrefix(input, "0X"):
+		// Hexadecimal (strip "0x")
+		if _, ok := z.SetString(input[2:], 16); !ok {
+			return "", fmt.Errorf("invalid hex string %q", input)
 		}
-		return fmt.Sprintf("%d", val), nil
+	default:
+		// Decimal
+		if _, ok := z.SetString(input, 10); !ok {
+			return "", fmt.Errorf("invalid decimal string %q", input)
+		}
 	}
 
-	// Try parsing as decimal to validate format
-	if _, err := strconv.ParseUint(input, 10, 64); err != nil {
-		return "", fmt.Errorf("invalid decimal string: %w", err)
-	}
-
-	// Already a valid decimal string
-	return input, nil
+	return z.String(), nil
 }
 
 // PatchTokenTransactionsWithNormalTxInfo updates token transactions with gas-related fields
@@ -158,4 +167,36 @@ func PatchTokenTransactionsWithNormalTxInfo(
 		}
 	}
 	return tokenTxs
+}
+
+// DivideByDecimals converts an integer string to a decimal string by shifting the dot
+// `value`   – integer in base‑10 (no sign, no “0x” prefix)
+// `decimals`– how many decimals the original integer assumed
+// Example: DivideByDecimals("1", 18) == "0.000000000000000001"
+func DivideByDecimals(value string, decimals int) string {
+	// Remove leading zeros to simplify later logic.
+	value = strings.TrimLeft(value, "0")
+	if value == "" {
+		value = "0"
+	}
+	if decimals == 0 {
+		return value
+	}
+
+	// If the number of digits ≤ decimals, we need to left‑pad with zeros:
+	//     1 / 10¹⁸  -> "000...001" (19 chars) -> "0.000...001"
+	if len(value) <= decimals {
+		padding := strings.Repeat("0", decimals-len(value)+1)
+		value = padding + value
+	}
+
+	// Insert decimal point.
+	dot := len(value) - decimals
+	res := value[:dot] + "." + value[dot:]
+
+	// Trim any trailing zeros and a possible trailing dot.
+	res = strings.TrimRight(res, "0")
+	res = strings.TrimRight(res, ".")
+
+	return res
 }

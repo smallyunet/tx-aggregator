@@ -51,11 +51,18 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 		unixTime := provider.ParseBlockscoutTimestampToUnix(tx.Timestamp)
 
 		// Normalize values
-		amount, _ := provider.NormalizeNumericString(tx.Value)
-		gasUsed, _ := provider.NormalizeNumericString(tx.GasUsed)
-		gasLimit, _ := provider.NormalizeNumericString(tx.GasLimit)
-		gasPrice, _ := provider.NormalizeNumericString(tx.GasPrice)
-		nonce, _ := provider.NormalizeNumericString(strconv.FormatInt(tx.Nonce, 10))
+		amountRaw, err := provider.NormalizeNumericString(tx.Value)
+		amount := provider.DivideByDecimals(amountRaw, model.NativeDefaultDecimals)
+		gasUsed, err := provider.NormalizeNumericString(tx.GasUsed)
+		gasLimit, err := provider.NormalizeNumericString(tx.GasLimit)
+		gasPrice, err := provider.NormalizeNumericString(tx.GasPrice)
+		nonce, err := provider.NormalizeNumericString(strconv.FormatInt(tx.Nonce, 10))
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("address", address).
+				Msg("Failed to normalize transaction nonce")
+		}
 
 		// Construct the transaction
 		transaction := model.Transaction{
