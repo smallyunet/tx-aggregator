@@ -27,6 +27,31 @@ func TestDivideByDecimals(t *testing.T) {
 	}
 }
 
+func TestMultiplyByDecimals(t *testing.T) {
+	tests := []struct {
+		value    string
+		decimals int
+		expected string
+	}{
+		{"0.5", 18, "500000000000000000"},
+		{"1230", 18, "1230000000000000000000"},
+		{"1", 8, "100000000"},
+		{"0.000000000000000001", 18, "1"},
+		{"0", 18, "0"},
+	}
+
+	for _, tt := range tests {
+		got, err := provider.MultiplyByDecimals(tt.value, tt.decimals)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.expected, got)
+	}
+}
+
+func TestMultiplyInvalidFraction(t *testing.T) {
+	_, err := provider.MultiplyByDecimals("0.0001", 2) // 4 fractional digits > 2
+	assert.Error(t, err)
+}
+
 func TestDetectERC20Event(t *testing.T) {
 	transferTopic := []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}
 	approveTopic := []string{"0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"}

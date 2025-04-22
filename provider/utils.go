@@ -9,6 +9,7 @@ import (
 	"time"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
+	"unicode"
 )
 
 // DetectERC20Event checks if the (address, topics, data) indicate
@@ -199,4 +200,63 @@ func DivideByDecimals(value string, decimals int) string {
 	res = strings.TrimRight(res, ".")
 
 	return res
+}
+
+// MultiplyByDecimals converts a decimal‑string to its integer representation
+// by shifting the dot `decimals` places to the right.
+//
+//	value    — decimal in base‑10 (no sign, may contain one “.”)
+//	decimals — how many decimals the *target* integer should assume
+//
+// Example: MultiplyByDecimals("0.1", 18) == "100000000000000000"
+func MultiplyByDecimals(value string, decimals int) (string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", errors.New("empty input string")
+	}
+
+	// Split into integer‑part and fractional‑part.
+	parts := strings.SplitN(value, ".", 2)
+	intPart := parts[0]
+	fracPart := ""
+	if len(parts) == 2 {
+		fracPart = parts[1]
+	}
+
+	// Validate that both parts contain only digits.
+	isDigits := func(s string) bool {
+		for _, r := range s {
+			if !unicode.IsDigit(r) {
+				return false
+			}
+		}
+		return true
+	}
+	if !isDigits(intPart) || !isDigits(fracPart) {
+		return "", fmt.Errorf("invalid numeric string: %q", value)
+	}
+
+	// Too many fractional digits → cannot represent exactly.
+	if len(fracPart) > decimals {
+		return "", fmt.Errorf(
+			"%q has %d fractional digits, exceeds token decimals %d",
+			value, len(fracPart), decimals,
+		)
+	}
+
+	// Strip leading zeros on the integer part
+	intPart = strings.TrimLeft(intPart, "0")
+	if intPart == "" {
+		intPart = "0"
+	}
+
+	// Pad the *right* side with zeros until we reach desired precision.
+	padded := intPart + fracPart + strings.Repeat("0", decimals-len(fracPart))
+
+	// Remove any residual leading zeros (but keep one if the number is 0).
+	padded = strings.TrimLeft(padded, "0")
+	if padded == "" {
+		padded = "0"
+	}
+	return padded, nil
 }

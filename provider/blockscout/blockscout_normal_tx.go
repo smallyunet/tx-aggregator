@@ -75,6 +75,7 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 			FromAddress:      tx.From.Hash,
 			ToAddress:        tx.To.Hash,
 			TokenAddress:     "",
+			Balance:          amountRaw,
 			Amount:           amount,
 			GasUsed:          gasUsed,
 			GasLimit:         gasLimit,

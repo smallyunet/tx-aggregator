@@ -6,6 +6,7 @@ import (
 	"tx-aggregator/internal/chainmeta"
 	"tx-aggregator/logger"
 	"tx-aggregator/model"
+	"tx-aggregator/provider"
 )
 
 // GetTokenTransfers retrieves token transfer events from Ankr for the given address
@@ -74,6 +75,14 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 			tranType = model.TransTypeIn
 		}
 
+		balance, err := provider.MultiplyByDecimals(tr.Value, int(tr.TokenDecimals))
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Str("address", address).
+				Msg("Failed to normalize token transfer amount")
+		}
+
 		// Construct transaction object
 		transaction := model.Transaction{
 			ChainID:          chainID,
@@ -85,6 +94,7 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 			FromAddress:      tr.FromAddress,
 			ToAddress:        tr.ToAddress,
 			TokenAddress:     tr.ContractAddress,
+			Balance:          balance,
 			Amount:           tr.Value,
 			GasUsed:          "", // not provided
 			GasLimit:         "", // not available

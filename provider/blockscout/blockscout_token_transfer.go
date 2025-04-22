@@ -61,6 +61,7 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 			FromAddress:      tt.From.Hash,
 			ToAddress:        tt.To.Hash,
 			TokenAddress:     tt.Token.Address,
+			Balance:          amountRaw,
 			Amount:           amount,
 			GasUsed:          "",                   // Not provided
 			GasLimit:         "",                   // Not provided

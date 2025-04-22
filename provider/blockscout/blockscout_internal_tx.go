@@ -80,6 +80,7 @@ func (t *BlockscoutProvider) transformBlockscoutInternalTx(
 			FromAddress:      fromHash,
 			ToAddress:        toHash,
 			TokenAddress:     "",
+			Balance:          amountRaw,
 			Amount:           amount,
 			GasUsed:          "", // Not provided
 			GasLimit:         gasLimit,

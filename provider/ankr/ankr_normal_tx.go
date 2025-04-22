@@ -112,6 +112,7 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *model.AnkrTransactionResponse
 			FromAddress:      tx.From,
 			ToAddress:        tx.To,
 			TokenAddress:     tokenAddr,
+			Balance:          amountRaw,
 			Amount:           amount,
 			GasUsed:          gasUsed,
 			GasLimit:         gasLimit,

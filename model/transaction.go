@@ -15,6 +15,7 @@ type Transaction struct {
 	FromAddress     string `json:"fromAddress"`
 	ToAddress       string `json:"toAddress"`
 	TokenAddress    string `json:"tokenAddress"`
+	Balance         string `json:"balance"`
 	Amount          string `json:"amount"`
 	GasUsed         string `json:"gasUsed"`
 	GasLimit        string `json:"gasLimit"`
