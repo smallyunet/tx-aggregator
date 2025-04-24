@@ -8,8 +8,8 @@ import (
 
 // ---------------------------- fetch & transform ---------------------------
 
-func (q *QuickNodeProvider) getTxByAddress(addr string, page, perPage int) (*quickNodeTxResponse, error) {
-	req := quickNodeTxRequest{
+func (q *QuickNodeProvider) getTxByAddress(addr string, page, perPage int) (*types.QuickNodeTxResponse, error) {
+	req := types.QuickNodeTxRequest{
 		JSONRPC: "2.0",
 		Method:  "qn_getTransactionsByAddress",
 		Params: []interface{}{
@@ -22,14 +22,14 @@ func (q *QuickNodeProvider) getTxByAddress(addr string, page, perPage int) (*qui
 		ID: 1,
 	}
 
-	var resp quickNodeTxResponse
+	var resp types.QuickNodeTxResponse
 	if err := q.sendRequest(req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
 }
 
-func (q *QuickNodeProvider) transformQuickNodeNative(resp *quickNodeTxResponse, addr string) []types.Transaction {
+func (q *QuickNodeProvider) transformQuickNodeNative(resp *types.QuickNodeTxResponse, addr string) []types.Transaction {
 	if resp == nil || len(resp.Result.Transactions) == 0 {
 		return nil
 	}

@@ -3,7 +3,7 @@ package types
 // ---------------------------- JSON-RPC payload/response ------------------
 
 // quickNodeTxRequest models qn_getTransactionsByAddress
-type quickNodeTxRequest struct {
+type QuickNodeTxRequest struct {
 	JSONRPC string        `json:"jsonrpc"`
 	Method  string        `json:"method"`
 	Params  []interface{} `json:"params"`
@@ -11,17 +11,17 @@ type quickNodeTxRequest struct {
 }
 
 // quickNodeTxResponse models the response structure
-type quickNodeTxResponse struct {
+type QuickNodeTxResponse struct {
 	JSONRPC string `json:"jsonrpc"`
 	ID      int    `json:"id"`
 	Result  struct {
 		Address      string                 `json:"address"`
 		EnsName      string                 `json:"ensName"`
-		Transactions []quickNodeTransaction `json:"transactions"`
+		Transactions []QuickNodeTransaction `json:"transactions"`
 	} `json:"result"`
 }
 
-type quickNodeTransaction struct {
+type QuickNodeTransaction struct {
 	BlockTimestamp   string `json:"blockTimestamp"`
 	TransactionHash  string `json:"transactionHash"`
 	BlockNumber      string `json:"blockNumber"`
@@ -35,14 +35,14 @@ type quickNodeTransaction struct {
 
 // -------------------------- JSON-RPC models ------------------------------
 
-type quickNodeTokenReq struct {
+type QuickNodeTokenReq struct {
 	JSONRPC string        `json:"jsonrpc"`
 	Method  string        `json:"method"`
 	Params  []interface{} `json:"params"`
 	ID      int           `json:"id"`
 }
 
-type quickNodeTokenResp struct {
+type QuickNodeTokenResp struct {
 	JSONRPC string `json:"jsonrpc"`
 	ID      int    `json:"id"`
 	Result  struct {
@@ -57,12 +57,12 @@ type quickNodeTokenResp struct {
 			ContractAddress string `json:"contractAddress"`
 		} `json:"token"`
 
-		Transfers  []quickNodeTransfer `json:"transfers"`
+		Transfers  []QuickNodeTransfer `json:"transfers"`
 		PageNumber int                 `json:"pageNumber"`
 	} `json:"result"`
 }
 
-type quickNodeTransfer struct {
+type QuickNodeTransfer struct {
 	Timestamp                    string `json:"timestamp"`
 	BlockNumber                  string `json:"blockNumber"`
 	TransactionHash              string `json:"transactionHash"`

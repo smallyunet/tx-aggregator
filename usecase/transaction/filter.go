@@ -30,7 +30,7 @@ func FilterTransactionsByTokenAddress(resp *types.TransactionResponse, params *t
 	tokenAddrLower := strings.ToLower(params.TokenAddress)
 
 	for _, tx := range resp.Result.Transactions {
-		if strings.ToLower(tx.TokenAddress) == tokenAddrLower {
+		if strings.ToLower(tx.TokenAddress) == tokenAddrLower && tx.CoinType == types.CoinTypeToken {
 			filtered = append(filtered, tx)
 		}
 	}

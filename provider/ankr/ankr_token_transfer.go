@@ -10,7 +10,19 @@ import (
 
 // GetTokenTransfers retrieves token transfer events from Ankr for the given address
 // These are ERC20/BEP20/etc token transfers
-func (p *AnkrProvider) GetTokenTransfers(address string) (*types.AnkrTokenTransferResponse, error) {
+func (p *AnkrProvider) GetTokenTransfers(params *types.TransactionQueryParams) (*types.AnkrTokenTransferResponse, error) {
+	address := params.Address
+
+	// Resolve chain list for this request
+	blockchains, err := utils.ResolveAnkrBlockchains(params.ChainNames)
+	if err != nil {
+		logger.Log.Error().
+			Err(err).
+			Str("address", address).
+			Msg("invalid chainNames parameter")
+		return nil, err
+	}
+
 	logger.Log.Debug().
 		Str("address", address).
 		Msg("Fetching token transfers from Ankr")
@@ -19,7 +31,7 @@ func (p *AnkrProvider) GetTokenTransfers(address string) (*types.AnkrTokenTransf
 		JSONRPC: "2.0",
 		Method:  "ankr_getTokenTransfers",
 		Params: map[string]interface{}{
-			"blockchain": config.AppConfig.Ankr.RequestBlockchains,
+			"blockchain": blockchains,
 			"pageSize":   config.AppConfig.Ankr.RequestPageSize,
 			"address":    address,
 		},

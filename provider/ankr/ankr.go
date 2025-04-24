@@ -49,7 +49,7 @@ func (a *AnkrProvider) GetTransactions(params *types.TransactionQueryParams) (*t
 
 	// Concurrently fetch and transform normal transactions
 	g.Go(func() error {
-		normalTxResp, err := a.GetTransactionsByAddress(address)
+		normalTxResp, err := a.GetTransactionsByAddress(params)
 		if err != nil {
 			logger.Log.Error().
 				Err(err).
@@ -64,7 +64,7 @@ func (a *AnkrProvider) GetTransactions(params *types.TransactionQueryParams) (*t
 
 	// Concurrently fetch and transform token transfers
 	g.Go(func() error {
-		tokenTransferResp, err := a.GetTokenTransfers(address)
+		tokenTransferResp, err := a.GetTokenTransfers(params)
 		if err != nil {
 			logger.Log.Error().
 				Err(err).

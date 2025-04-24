@@ -10,7 +10,19 @@ import (
 
 // GetTransactionsByAddress retrieves normal transactions from Ankr for the given address
 // These are native token transfers (ETH, BNB, MATIC, etc.)
-func (p *AnkrProvider) GetTransactionsByAddress(address string) (*types.AnkrTransactionResponse, error) {
+func (p *AnkrProvider) GetTransactionsByAddress(params *types.TransactionQueryParams) (*types.AnkrTransactionResponse, error) {
+	address := params.Address
+
+	// Resolve chain list for this request
+	blockchains, err := utils.ResolveAnkrBlockchains(params.ChainNames)
+	if err != nil {
+		logger.Log.Error().
+			Err(err).
+			Str("address", address).
+			Msg("invalid chainNames parameter")
+		return nil, err
+	}
+
 	logger.Log.Debug().
 		Str("address", address).
 		Msg("Fetching normal transactions from Ankr")
@@ -19,7 +31,7 @@ func (p *AnkrProvider) GetTransactionsByAddress(address string) (*types.AnkrTran
 		JSONRPC: "2.0",
 		Method:  "ankr_getTransactionsByAddress",
 		Params: map[string]interface{}{
-			"blockchain":  config.AppConfig.Ankr.RequestBlockchains,
+			"blockchain":  blockchains,
 			"includeLogs": true,
 			"descOrder":   true,
 			"pageSize":    config.AppConfig.Ankr.RequestPageSize,

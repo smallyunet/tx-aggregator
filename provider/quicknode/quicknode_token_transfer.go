@@ -9,7 +9,7 @@ import (
 
 // -------------------------- fetch & transform ----------------------------
 
-func (q *QuickNodeProvider) getWalletTokenTransfers(addr, contract string, page, perPage int) (*quickNodeTokenResp, error) {
+func (q *QuickNodeProvider) getWalletTokenTransfers(addr, contract string, page, perPage int) (*types.QuickNodeTokenResp, error) {
 	param := map[string]interface{}{
 		"address": addr,
 		"page":    page,
@@ -19,21 +19,21 @@ func (q *QuickNodeProvider) getWalletTokenTransfers(addr, contract string, page,
 		param["contract"] = contract
 	}
 
-	req := quickNodeTokenReq{
+	req := types.QuickNodeTokenReq{
 		JSONRPC: "2.0",
 		Method:  "qn_getWalletTokenTransactions",
 		Params:  []interface{}{param},
 		ID:      1,
 	}
 
-	var resp quickNodeTokenResp
+	var resp types.QuickNodeTokenResp
 	if err := q.sendRequest(req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
 }
 
-func (q *QuickNodeProvider) transformQuickNodeToken(resp *quickNodeTokenResp, addr string) []types.Transaction {
+func (q *QuickNodeProvider) transformQuickNodeToken(resp *types.QuickNodeTokenResp, addr string) []types.Transaction {
 	if resp == nil || len(resp.Result.Transfers) == 0 {
 		return nil
 	}
