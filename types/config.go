@@ -26,7 +26,8 @@ type RedisConfig struct {
 
 // ProvidersConfig holds provider-level settings.
 type ProvidersConfig struct {
-	RequestTimeout int64 `mapstructure:"request_timeout"`
+	RequestTimeout int64             `mapstructure:"request_timeout"`
+	ChainProviders map[string]string `mapstructure:"chain_providers"`
 }
 
 // AnkrConfig holds Ankr provider settings.

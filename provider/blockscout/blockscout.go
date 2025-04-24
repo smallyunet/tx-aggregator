@@ -39,7 +39,9 @@ func NewBlockscoutProvider(chainID int64, config types.BlockscoutConfig) *Blocks
 
 // GetTransactions concurrently fetches all relevant data for a single address
 // and returns a unified TransactionResponse.
-func (p *BlockscoutProvider) GetTransactions(address string) (*types.TransactionResponse, error) {
+func (p *BlockscoutProvider) GetTransactions(params *types.TransactionQueryParams) (*types.TransactionResponse, error) {
+	address := params.Address
+
 	logger.Log.Info().
 		Str("chain", p.config.ChainName).
 		Str("address", address).

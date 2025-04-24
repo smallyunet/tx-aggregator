@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"tx-aggregator/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -36,34 +37,45 @@ func main() {
 		Strs("redis_addresses", config.AppConfig.Redis.Addrs).
 		Msg("Redis cache initialized")
 
-	// Step 4: Initialize data providers
-	var providers []provider.Provider
+	// ------------- 2  build provider registry -----------------------------
+	registry := make(map[string]provider.Provider)
 
-	// Ankr provider
-	logger.Log.Info().Str("ankr_url", config.AppConfig.Ankr.URL).Msg("Adding Ankr provider")
-	providers = append(providers, ankr.NewAnkrProvider(config.AppConfig.Ankr.APIKey, config.AppConfig.Ankr.URL))
+	// ---- Ankr (single instance) ----
+	ankrKey := "ankr" // ← must match YAML providers.chain_providers entries
+	ankrProvider := ankr.NewAnkrProvider(
+		config.AppConfig.Ankr.APIKey,
+		config.AppConfig.Ankr.URL,
+	)
+	registry[ankrKey] = ankrProvider
+	logger.Log.Info().Str("key", ankrKey).Msg("Registered Ankr provider")
 
-	// Blockscout providers
+	// ---- Blockscout (one instance per YAML stanza) ----
 	for _, bs := range config.AppConfig.Blockscout {
 		chainID, err := utils.ChainIDByName(bs.ChainName)
 		if err != nil {
-			logger.Log.Warn().Str("chain_name", bs.ChainName).Msg("Unknown chain name, skipping Blockscout provider")
+			logger.Log.Warn().
+				Str("chain_name", bs.ChainName).
+				Msg("Unknown chain name, skipping Blockscout provider")
 			continue
 		}
+
+		// Derive or read a unique provider key
+		providerKey := fmt.Sprintf("blockscout_%s", strings.ToLower(bs.ChainName))
+		registry[providerKey] = blockscout.NewBlockscoutProvider(chainID, bs)
+
 		logger.Log.Info().
+			Str("key", providerKey).
 			Str("chain_name", bs.ChainName).
-			Str("blockscout_url", bs.URL).
-			Msg("Adding Blockscout provider")
-		providers = append(providers, blockscout.NewBlockscoutProvider(chainID, bs))
+			Str("url", bs.URL).
+			Msg("Registered Blockscout provider")
 	}
 
-	multiProvider := provider.NewMultiProvider(providers...)
-	if multiProvider == nil {
-		logger.Log.Fatal().Msg("Failed to initialize multi-provider")
-	}
-	logger.Log.Info().Msg("Multi-provider initialized")
+	// ---- quick node provider
 
-	// Step 5: Initialize usecase service
+	// ------------- 3  create MultiProvider -------------------------------
+	multiProvider := provider.NewMultiProvider(registry)
+
+	// ------------- 4  use-case, handler, server (unchanged) --------------
 	txService := transaction.NewService(redisCache, multiProvider)
 
 	// Step 6: Initialize handler

@@ -14,6 +14,12 @@ redis:
 
 providers:
   request_timeout: 60
+  chain_providers:
+    ETH: ankr
+    BSC: ankr
+    POL: ankr
+    BASE: ankr
+    TTX: blockscout_ttx
 
 # Ankr API configuration for blockchain data
 ankr:
@@ -29,13 +35,13 @@ ankr:
     bsc: 56
     polygon: 137
     base : 8453
-  request_page_size: 1000  # Number of records per API request
+  request_page_size: 100  # Number of records per API request
 
 # Blockscout providers (multiple chain support)
 blockscout:
   - url: https://api.tantin.com/api/v2
     chain_name: TTX
-    request_page_size: 1000
+    request_page_size: 100
     rpc_url: https://rpc.tantin.com
     rpc_request_timeout: 90
 

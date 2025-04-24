@@ -32,7 +32,9 @@ func NewAnkrProvider(apiKey, url string) *AnkrProvider {
 
 // GetTransactions fetches and transforms both normal transactions and token transfers for the given address,
 // using concurrency in a more streamlined way (fetch & transform in the same goroutine).
-func (a *AnkrProvider) GetTransactions(address string) (*types.TransactionResponse, error) {
+func (a *AnkrProvider) GetTransactions(params *types.TransactionQueryParams) (*types.TransactionResponse, error) {
+	address := params.Address
+
 	logger.Log.Info().
 		Str("address", address).
 		Msg("Starting to fetch all transactions for address")

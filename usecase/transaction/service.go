@@ -44,7 +44,7 @@ func (s *Service) GetTransactions(params *types.TransactionQueryParams) (*types.
 
 	// Step 2: Fetch from provider
 	logger.Log.Info().Msg("Querying transactions from provider")
-	resp, err = s.provider.GetTransactions(params.Address)
+	resp, err = s.provider.GetTransactions(params)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Provider query failed")
 		code := types.CodeProviderFailed
