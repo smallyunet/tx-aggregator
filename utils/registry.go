@@ -52,25 +52,26 @@ func AnkrChainNameByID(id int64) (string, error) {
 	return "", fmt.Errorf("unknown chain ID: %d", id)
 }
 
-// ResolveAnkrBlockchains converts user-supplied chain names (e.g. "ETH", "BSC")
-// to the lowercase identifiers expected by the Ankr API.
+// ResolveAnkrBlockchains converts user–supplied chain names to the lowercase
+// identifiers required by the Ankr API.
 //
-// Rules
-//   - If paramNames is empty, fall back to AppConfig.Ankr.RequestBlockchains.
-//   - Otherwise:
-//     1. Convert each name → chain ID via ChainIDByName.
-//     2. Reverse-lookup that ID in AppConfig.Ankr.ChainIDs to get the
-//     corresponding Ankr name (eth, bsc, polygon, base …).
-//   - Any unknown name or unsupported chain triggers an error.
+// Behaviour change:
+//   • Any unknown or unsupported chain name is *ignored* instead of causing
+//     an error.
+//   • If, after filtering, the list is empty, the function falls back to
+//     AppConfig.Ankr.RequestBlockchains so that the caller still gets a
+//     valid slice.
 //
-// Returned slice contains unique, lowercase Ankr names.
+// Example
+//   paramNames = []string{"ETH", "FOO", "BSC"}
+//   → returns []string{"eth", "bsc"}
 func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
-	// Return defaults when the caller did not specify chainNames.
+	// 1. No names supplied → use defaults immediately.
 	if len(paramNames) == 0 {
 		return config.AppConfig.Ankr.RequestBlockchains, nil
 	}
 
-	// Build reverse index: chainID → ankrName.
+	// 2. Build reverse index: chain-ID → ankrName.
 	idToAnkr := make(map[int64]string, len(config.AppConfig.Ankr.ChainIDs))
 	for ankrName, id := range config.AppConfig.Ankr.ChainIDs {
 		idToAnkr[id] = ankrName
@@ -79,14 +80,15 @@ func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
 	var blockchains []string
 	seen := make(map[string]struct{}) // de-duplication
 
+	// 3. Translate / filter.
 	for _, raw := range paramNames {
-		chainID, err := ChainIDByName(raw)
+		chainID, err := ChainIDByName(raw) // unknown UI name → skip
 		if err != nil {
-			return nil, err // unknown chain name
+			continue
 		}
-		ankrName, ok := idToAnkr[chainID]
+		ankrName, ok := idToAnkr[chainID] // supported by Ankr?
 		if !ok {
-			return nil, fmt.Errorf("chain %s (id=%d) not supported by Ankr provider", raw, chainID)
+			continue
 		}
 		ankrName = strings.ToLower(ankrName)
 		if _, dup := seen[ankrName]; !dup {
@@ -95,5 +97,9 @@ func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
 		}
 	}
 
+	// 4. If everything was filtered out, revert to defaults.
+	if len(blockchains) == 0 {
+		return config.AppConfig.Ankr.RequestBlockchains, nil
+	}
 	return blockchains, nil
 }
