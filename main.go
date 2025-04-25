@@ -1,4 +1,3 @@
-// main.go
 package main
 
 import (
@@ -9,9 +8,8 @@ import (
 	"syscall"
 	"tx-aggregator/consul"
 
-	consulapi "github.com/hashicorp/consul/api"
-
 	"github.com/gofiber/fiber/v2"
+	consulapi "github.com/hashicorp/consul/api"
 
 	"tx-aggregator/api"
 	"tx-aggregator/cache"
@@ -30,31 +28,42 @@ func bootstrapPath() string {
 	if env == "" {
 		env = "dev"
 	}
-	// search order: consul/bootstrap.<env>.yaml → consul/bootstrap.test2.yaml
-	candidate := fmt.Sprintf("consul/bootstrap.%s.yaml", env)
-	if _, err := os.Stat(candidate); err == nil {
-		return candidate
+	path := fmt.Sprintf("consul/bootstrap.%s.yaml", env)
+	if _, err := os.Stat(path); err == nil {
+		return path
 	}
-	return "consul/bootstrap.dev.yaml" // fallback
+	return "consul/bootstrap.dev.yaml"
 }
 
 func main() {
-	//----------------------------------------------------------------------
-	// 1. Load application config and initialize logger
-	//----------------------------------------------------------------------
-	config.Init()
-	logger.Init()
+	logger.Log.Info().Msg("==== Starting tx-aggregator ====")
 
-	path := bootstrapPath()
-	bootstrapCfg, err := consul.LoadBootstrap(path)
+	// 1. Load bootstrap config (for Consul + service registration)
+	bootstrapFile := bootstrapPath()
+	logger.Log.Info().Str("file", bootstrapFile).Msg("Loading bootstrap config")
+
+	bootstrapCfg, err := consul.LoadBootstrap(bootstrapFile)
 	if err != nil {
-		logger.Log.Fatal().Err(err).Str("path", path).Msg("Failed to load bootstrap config")
+		logger.Log.Fatal().Err(err).Str("file", bootstrapFile).Msg("Failed to load bootstrap config")
 	}
-	logger.Log.Info().Str("bootstrap", path).Msg("loaded bootstrap configuration")
+	logger.Log.Info().
+		Str("consul.address", bootstrapCfg.Consul.Address).
+		Str("consul.scheme", bootstrapCfg.Consul.Scheme).
+		Str("consul.datacenter", bootstrapCfg.Consul.Datacenter).
+		Str("service.name", bootstrapCfg.Service.Name).
+		Str("service.ip", bootstrapCfg.Service.IP).
+		Int("service.port", bootstrapCfg.Service.Port).
+		Msg("Bootstrap config loaded")
 
-	//----------------------------------------------------------------------
-	// 2. Build Consul client from bootstrap parameters
-	//----------------------------------------------------------------------
+	// 2. Load runtime config from Consul KV
+	logger.Log.Info().Msg("Initializing runtime configuration from Consul KV")
+	config.Init(bootstrapCfg)
+
+	// 3. Init logger (after config)
+	logger.Init(config.AppConfig.Log.Level)
+
+	// 4. Setup Consul client
+	logger.Log.Info().Str("consul.address", bootstrapCfg.Consul.Address).Msg("Creating Consul API client")
 	consulCfg := consulapi.DefaultConfig()
 	consulCfg.Address = bootstrapCfg.Consul.Address
 	consulCfg.Scheme = bootstrapCfg.Consul.Scheme
@@ -63,67 +72,63 @@ func main() {
 
 	consulClient, err := consulapi.NewClient(consulCfg)
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("unable to connect to Consul")
+		logger.Log.Fatal().Err(err).Msg("Failed to connect to Consul API")
 	}
+	logger.Log.Info().Msg("Connected to Consul successfully")
 
-	//----------------------------------------------------------------------
-	// 3. Initialize Redis cache (mandatory for the service layer)
-	//----------------------------------------------------------------------
+	// 5. Setup Redis
+	logger.Log.Info().Strs("redis.addrs", config.AppConfig.Redis.Addrs).Msg("Initializing Redis cache")
 	redisCache := cache.NewRedisCache(config.AppConfig.Redis.Addrs, config.AppConfig.Redis.Password)
 	if redisCache == nil {
-		logger.Log.Fatal().Msg("unable to create Redis cache client")
+		logger.Log.Fatal().Msg("Failed to initialize Redis cache")
 	}
+	logger.Log.Info().Msg("Redis cache initialized")
 
-	//----------------------------------------------------------------------
-	// 4. Provider registry (Ankr, Blockscout, QuickNode, etc.)
-	//----------------------------------------------------------------------
+	// 6. Setup providers
+	logger.Log.Info().Msg("Setting up providers")
 	registry := make(map[string]provider.Provider)
-
-	ankrProvider := ankr.NewAnkrProvider(
-		config.AppConfig.Ankr.APIKey,
-		config.AppConfig.Ankr.URL,
-	)
-	registry["ankr"] = ankrProvider
+	registry["ankr"] = ankr.NewAnkrProvider(config.AppConfig.Ankr.APIKey, config.AppConfig.Ankr.URL)
+	logger.Log.Info().Msg("Ankr provider registered")
 
 	for _, bs := range config.AppConfig.Blockscout {
 		chainID, err := utils.ChainIDByName(bs.ChainName)
 		if err != nil {
-			logger.Log.Warn().Str("chain", bs.ChainName).Msg("unknown chain; skip Blockscout provider")
+			logger.Log.Warn().Str("chain", bs.ChainName).Msg("Invalid chain name, skipping Blockscout")
 			continue
 		}
 		key := fmt.Sprintf("blockscout_%s", strings.ToLower(bs.ChainName))
 		registry[key] = blockscout.NewBlockscoutProvider(chainID, bs)
+		logger.Log.Info().Str("provider", key).Str("url", bs.URL).Msg("Blockscout provider registered")
 	}
 
 	multiProvider := provider.NewMultiProvider(registry)
 
-	//----------------------------------------------------------------------
-	// 5. Build service layer, HTTP handlers, and Fiber app
-	//----------------------------------------------------------------------
+	// 7. Setup Fiber app
+	logger.Log.Info().Msg("Setting up HTTP server and routes")
 	txService := transaction.NewService(redisCache, multiProvider)
 	txHandler := api.NewTransactionHandler(txService)
 
 	app := fiber.New()
 	router.SetupRoutes(app, txHandler)
 
-	//----------------------------------------------------------------------
-	// 6. Register the service in Consul and set up deregistration on exit
-	//----------------------------------------------------------------------
-	port := config.AppConfig.Server.Port
-
+	// 8. Register service in Consul
+	port := bootstrapCfg.Service.Port
+	if port == 0 {
+		port = config.AppConfig.Server.Port
+	}
 	serviceIP := bootstrapCfg.Service.IP
 	if serviceIP == "" {
-		serviceIP, _ = utils.GetLocalIPv4() // fallback to detected IP
+		serviceIP, _ = utils.GetLocalIPv4()
 	}
 
 	logger.Log.Info().
-		Str("service", bootstrapCfg.Service.Name).
-		Str("ip", serviceIP).
-		Int("port", port).
-		Msg("service registered in Consul")
+		Str("service.name", bootstrapCfg.Service.Name).
+		Str("service.ip", serviceIP).
+		Int("service.port", port).
+		Msg("Registering service in Consul")
 
 	deregister, err := consul.Register(consulClient, consul.Options{
-		Name:       bootstrapCfg.Service.Name, // e.g. "tx-aggregator"
+		Name:       bootstrapCfg.Service.Name,
 		ID:         fmt.Sprintf("%s-%d", bootstrapCfg.Service.Name, port),
 		Address:    serviceIP,
 		Port:       port,
@@ -131,24 +136,28 @@ func main() {
 		Meta:       map[string]string{"env": os.Getenv("APP_ENV")},
 	})
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("Consul registration failed")
+		logger.Log.Fatal().Err(err).Msg("Consul service registration failed")
 	}
+	logger.Log.Info().Msg("Service registered successfully in Consul")
 
-	// Handle SIGINT/SIGTERM for graceful shutdown and Consul deregistration
+	// 9. Graceful shutdown
 	go func() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-		<-sigCh
+		sig := <-sigCh
+		logger.Log.Warn().Str("signal", sig.String()).Msg("Received shutdown signal")
+
 		if err := deregister(); err != nil {
-			logger.Log.Error().Err(err).Msg("Consul deregistration failed")
+			logger.Log.Error().Err(err).Msg("Failed to deregister from Consul")
+		} else {
+			logger.Log.Info().Msg("Deregistered from Consul successfully")
 		}
 		os.Exit(0)
 	}()
 
-	//----------------------------------------------------------------------
-	// 7. Start Fiber HTTP server
-	//----------------------------------------------------------------------
+	// 10. Start HTTP server
+	logger.Log.Info().Int("port", port).Msg("Starting Fiber HTTP server")
 	if err := app.Listen(fmt.Sprintf(":%d", port)); err != nil {
-		logger.Log.Fatal().Err(err).Msg("Fiber server terminated")
+		logger.Log.Fatal().Err(err).Msg("Fiber server terminated unexpectedly")
 	}
 }

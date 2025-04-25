@@ -6,7 +6,7 @@ services:
     ports:
       - "8050:8050"
     environment:
-      - APP_ENV=${APP_ENV:-dev}
+      - APP_ENV=${APP_ENV:-test}
       - APP_PORT=8050
     volumes:
       - ./config:/app/config
@@ -18,7 +18,7 @@ services:
     ports:
       - "8051:8051"
     environment:
-      - APP_ENV=${APP_ENV:-dev}
+      - APP_ENV=${APP_ENV:-test}
       - APP_PORT=8051
     volumes:
       - ./config:/app/config
