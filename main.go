@@ -3,12 +3,13 @@ package main
 
 import (
 	"fmt"
-	consulapi "github.com/hashicorp/consul/api"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"tx-aggregator/consul"
+
+	consulapi "github.com/hashicorp/consul/api"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -34,7 +35,7 @@ func bootstrapPath() string {
 	if _, err := os.Stat(candidate); err == nil {
 		return candidate
 	}
-	return "consul/bootstrap.yaml" // fallback
+	return "consul/bootstrap.dev.yaml" // fallback
 }
 
 func main() {
@@ -44,11 +45,12 @@ func main() {
 	config.Init()
 	logger.Init()
 
-	bootstrapCfg, err := consul.LoadBootstrap(bootstrapPath())
+	path := bootstrapPath()
+	bootstrapCfg, err := consul.LoadBootstrap(path)
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("failed to load bootstrap.test2.yaml")
+		logger.Log.Fatal().Err(err).Str("path", path).Msg("Failed to load bootstrap config")
 	}
-	logger.Log.Info().Str("bootstrap", bootstrapPath()).Msg("loaded bootstrap configuration")
+	logger.Log.Info().Str("bootstrap", path).Msg("loaded bootstrap configuration")
 
 	//----------------------------------------------------------------------
 	// 2. Build Consul client from bootstrap parameters
