@@ -10,6 +10,7 @@ services:
       - APP_PORT=9090
     volumes:
       - ./config:/app/config
+      - ./consul:/app/consul
     restart: unless-stopped
 
   app-2:
@@ -21,4 +22,5 @@ services:
       - APP_PORT=9091
     volumes:
       - ./config:/app/config
+      - ./consul:/app/consul
     restart: unless-stopped
