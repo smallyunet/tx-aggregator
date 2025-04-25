@@ -1,17 +1,24 @@
 version: '3.8'
 
 services:
-  app:
+  app-1:
     build: .
     ports:
-      - "8080:8080"
+      - "9090:9090"
     environment:
       - APP_ENV=${APP_ENV:-dev}
+      - APP_PORT=9090
     volumes:
-      - ./config:/app/config:ro  # Mount local config.yaml as read-only
+      - ./config:/app/config
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
+  app-2:
+    build: .
+    ports:
+      - "9091:9091"
+    environment:
+      - APP_ENV=${APP_ENV:-dev}
+      - APP_PORT=9091
+    volumes:
+      - ./config:/app/config
+    restart: unless-stopped

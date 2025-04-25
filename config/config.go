@@ -22,7 +22,7 @@ func Init() {
 	log.Printf("Using APP_ENV: %s\n", env)
 
 	// Set config file name based on environment
-	viper.SetConfigName("config." + env) // config.dev.yaml / config.prod.yaml
+	viper.SetConfigName("config." + env) // config.dev.yaml / config.test.yaml
 	viper.SetConfigType("yaml")
 
 	// Add config paths
@@ -41,6 +41,11 @@ func Init() {
 		panic(fmt.Errorf("fatal error loading config file: %w", err))
 	}
 	log.Printf("Configuration loaded from: %s\n", viper.ConfigFileUsed())
+
+	// Bind environment variable overrides
+	if err := viper.BindEnv("server.port", "APP_PORT"); err != nil {
+		log.Fatalf("Failed to bind APP_PORT: %v", err)
+	}
 
 	// Unmarshal into struct
 	log.Println("Unmarshaling configuration...")

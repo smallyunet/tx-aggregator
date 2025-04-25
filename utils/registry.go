@@ -56,15 +56,16 @@ func AnkrChainNameByID(id int64) (string, error) {
 // identifiers required by the Ankr API.
 //
 // Behaviour change:
-//   • Any unknown or unsupported chain name is *ignored* instead of causing
+//   - Any unknown or unsupported chain name is *ignored* instead of causing
 //     an error.
-//   • If, after filtering, the list is empty, the function falls back to
+//   - If, after filtering, the list is empty, the function falls back to
 //     AppConfig.Ankr.RequestBlockchains so that the caller still gets a
 //     valid slice.
 //
 // Example
-//   paramNames = []string{"ETH", "FOO", "BSC"}
-//   → returns []string{"eth", "bsc"}
+//
+//	paramNames = []string{"ETH", "FOO", "BSC"}
+//	→ returns []string{"eth", "bsc"}
 func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
 	// 1. No names supplied → use defaults immediately.
 	if len(paramNames) == 0 {
