@@ -2,7 +2,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -62,11 +65,13 @@ func Init(bootstrap *types.BootstrapConfig) {
 	}
 
 	// Optional local override
-	overrideFile := "config." + env + ".yaml"
+	overrideFile := fmt.Sprintf("config.%s.yaml", env)
 	logger.Log.Info().Str("override", overrideFile).Msg("Merging local override config if exists")
-	viper.SetConfigName("config." + env)
-	viper.AddConfigPath("./config")
+
+	viper.SetConfigName(strings.TrimSuffix(overrideFile, ".yaml"))
+	viper.AddConfigPath(filepath.Join(".", types.ConfigFolderPath)) // config path like ./consul
 	viper.AddConfigPath(".")
+
 	_ = viper.MergeInConfig() // optional
 
 	// Set defaults

@@ -1,5 +1,9 @@
 package types
 
+const (
+	ConfigFolderPath = "configfiles"
+)
+
 // CoinType represents the type of cryptocurrency
 const (
 	// CoinTypeNative represents native cryptocurrency (e.g., ETH, BNB)

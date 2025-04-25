@@ -3,10 +3,28 @@ package consul
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"tx-aggregator/types"
 
 	"github.com/spf13/viper"
 )
+
+// BootstrapPath returns the full path to the bootstrap YAML config file.
+// It checks for a file named bootstrap.<env>.yaml under types.ConfigFolderPath.
+// Falls back to bootstrap.dev.yaml if specific file is not found.
+func BootstrapPath() string {
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "dev"
+	}
+
+	candidate := filepath.Join(types.ConfigFolderPath, fmt.Sprintf("bootstrap.%s.yaml", env))
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+
+	return filepath.Join(types.ConfigFolderPath, "bootstrap.dev.yaml")
+}
 
 // LoadBootstrap reads and parses the bootstrap YAML configuration file.
 // It allows overrides from environment variables.

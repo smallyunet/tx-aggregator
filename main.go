@@ -24,23 +24,11 @@ import (
 	"tx-aggregator/utils"
 )
 
-func bootstrapPath() string {
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "dev"
-	}
-	path := fmt.Sprintf("consul/bootstrap.%s.yaml", env)
-	if _, err := os.Stat(path); err == nil {
-		return path
-	}
-	return "consul/bootstrap.dev.yaml"
-}
-
 func main() {
 	logger.Log.Info().Msg("==== Starting tx-aggregator ====")
 
 	// 1. Load bootstrap config (for Consul + service registration)
-	bootstrapFile := bootstrapPath()
+	bootstrapFile := consul.BootstrapPath()
 	logger.Log.Info().Str("file", bootstrapFile).Msg("Loading bootstrap config")
 
 	bootstrapCfg, err := consul.LoadBootstrap(bootstrapFile)

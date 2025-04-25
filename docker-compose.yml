@@ -16,8 +16,7 @@ services:
       - SERVICE_IP=${SERVICE_IP:-10.234.99.5}
       - SERVICE_PORT=${APP_PORT1:-8050}
     volumes:
-      - ./config:/app/config
-      - ./consul:/app/consul
+      - ./configfiles:/app/configfiles
     restart: unless-stopped
 
   app-2:
@@ -35,6 +34,5 @@ services:
       - SERVICE_IP=${SERVICE_IP:-10.234.99.5}
       - SERVICE_PORT=${APP_PORT2:-8051}
     volumes:
-      - ./config:/app/config
-      - ./consul:/app/consul
+      - ./configfiles:/app/configfiles
     restart: unless-stopped
