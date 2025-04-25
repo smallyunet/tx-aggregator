@@ -4,10 +4,10 @@ services:
   app-1:
     build: .
     ports:
-      - "9090:9090"
+      - "8050:8050"
     environment:
       - APP_ENV=${APP_ENV:-dev}
-      - APP_PORT=9090
+      - APP_PORT=8050
     volumes:
       - ./config:/app/config
       - ./consul:/app/consul
@@ -16,10 +16,10 @@ services:
   app-2:
     build: .
     ports:
-      - "9091:9091"
+      - "8051:8051"
     environment:
       - APP_ENV=${APP_ENV:-dev}
-      - APP_PORT=9091
+      - APP_PORT=8051
     volumes:
       - ./config:/app/config
       - ./consul:/app/consul
