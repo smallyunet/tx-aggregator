@@ -1,4 +1,4 @@
-package transaction
+package usecase
 
 import (
 	"tx-aggregator/cache"

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"syscall"
 	"tx-aggregator/consul"
+	"tx-aggregator/types"
+	"tx-aggregator/usecase"
 
 	"github.com/gofiber/fiber/v2"
 	consulapi "github.com/hashicorp/consul/api"
@@ -19,7 +21,6 @@ import (
 	"tx-aggregator/provider/ankr"
 	"tx-aggregator/provider/blockscout"
 	"tx-aggregator/router"
-	"tx-aggregator/usecase/transaction"
 	"tx-aggregator/utils"
 )
 
@@ -105,7 +106,7 @@ func main() {
 
 	// 7. Setup Fiber app
 	logger.Log.Info().Msg("Setting up HTTP server and routes")
-	txService := transaction.NewService(redisCache, multiProvider)
+	txService := usecase.NewService(redisCache, multiProvider)
 	txHandler := api.NewTransactionHandler(txService)
 
 	app := fiber.New()
@@ -127,7 +128,7 @@ func main() {
 		Int("service.port", port).
 		Msg("Registering service in Consul")
 
-	deregister, err := consul.Register(consulClient, consul.Options{
+	deregister, err := consul.Register(consulClient, types.Options{
 		Name:       bootstrapCfg.Service.Name,
 		ID:         fmt.Sprintf("%s-%d", bootstrapCfg.Service.Name, port),
 		Address:    serviceIP,

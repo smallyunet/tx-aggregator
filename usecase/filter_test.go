@@ -1,4 +1,4 @@
-package transaction
+package usecase
 
 import (
 	"testing"
@@ -24,13 +24,13 @@ func TestFilterTransactionsByInvolvedAddress(t *testing.T) {
 func TestFilterTransactionsByTokenAddress(t *testing.T) {
 	resp := &types.TransactionResponse{}
 	resp.Result.Transactions = []types.Transaction{
-		{TokenAddress: "0x111"},
+		{TokenAddress: "0x111", CoinType: types.CoinTypeNative},
 		{TokenAddress: "0x222"},
-		{TokenAddress: "0X111"},
+		{TokenAddress: "0X111", CoinType: types.CoinTypeToken},
 	}
 	params := &types.TransactionQueryParams{TokenAddress: "0x111"}
 	filtered := FilterTransactionsByTokenAddress(resp, params)
-	assert.Len(t, filtered.Result.Transactions, 2)
+	assert.Len(t, filtered.Result.Transactions, 1)
 }
 
 func TestFilterTransactionsByCoinType(t *testing.T) {

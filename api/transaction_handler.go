@@ -5,18 +5,18 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"time"
+	"tx-aggregator/interfaces"
 	"tx-aggregator/logger"
 	"tx-aggregator/types"
-	transactionUsecase "tx-aggregator/usecase/transaction"
 )
 
 // TransactionHandler handles HTTP requests related to transaction queries.
 type TransactionHandler struct {
-	service transactionUsecase.ServiceInterface
+	service interfaces.TransactionServiceInterface
 }
 
 // NewTransactionHandler initializes a new TransactionHandler with the given service.
-func NewTransactionHandler(service transactionUsecase.ServiceInterface) *TransactionHandler {
+func NewTransactionHandler(service interfaces.TransactionServiceInterface) *TransactionHandler {
 	return &TransactionHandler{service: service}
 }
 

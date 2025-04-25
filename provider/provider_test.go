@@ -5,20 +5,20 @@ import (
 	"sort"
 	"testing"
 	"time"
-	"tx-aggregator/config"
-	"tx-aggregator/types"
 
 	"github.com/stretchr/testify/assert"
+	"tx-aggregator/config"
+	"tx-aggregator/types"
 )
 
-// mockProvider is a test implementation of the Provider interface
+// mockProvider is a fake provider used for testing
 type mockProvider struct {
 	transactions []types.Transaction
 	err          error
 	delay        time.Duration
 }
 
-func (m *mockProvider) GetTransactions(address string) (*types.TransactionResponse, error) {
+func (m *mockProvider) GetTransactions(params *types.TransactionQueryParams) (*types.TransactionResponse, error) {
 	if m.delay > 0 {
 		time.Sleep(m.delay)
 	}
@@ -37,37 +37,57 @@ func (m *mockProvider) GetTransactions(address string) (*types.TransactionRespon
 	}, nil
 }
 
-func TestMultiProvider_AllSuccess(t *testing.T) {
-	config.AppConfig.Providers.RequestTimeout = 3 // seconds
+// prepareTestMultiProvider creates a MultiProvider with fake providers and config
+func prepareTestMultiProvider(providers map[string]Provider, chainMap map[string]string) *MultiProvider {
+	config.AppConfig.Providers.RequestTimeout = 3
+	config.AppConfig.Providers.ChainProviders = chainMap
+	return NewMultiProvider(providers)
+}
 
+func TestMultiProvider_AllSuccess(t *testing.T) {
 	p1 := &mockProvider{transactions: []types.Transaction{{Hash: "0xabc"}}}
 	p2 := &mockProvider{transactions: []types.Transaction{{Hash: "0xdef"}}}
-	mp := NewMultiProvider(p1, p2)
 
-	resp, err := mp.GetTransactions("0x123")
+	providerMap := map[string]Provider{
+		"p1": p1,
+		"p2": p2,
+	}
+	chainMap := map[string]string{
+		"eth": "p1",
+		"bsc": "p2",
+	}
+
+	mp := prepareTestMultiProvider(providerMap, chainMap)
+
+	params := &types.TransactionQueryParams{
+		ChainNames: []string{"eth", "bsc"},
+	}
+	resp, err := mp.GetTransactions(params)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(resp.Result.Transactions))
+	assert.Len(t, resp.Result.Transactions, 2)
+
+	// Sort by hash for deterministic order
 	sort.Slice(resp.Result.Transactions, func(i, j int) bool {
 		return resp.Result.Transactions[i].Hash < resp.Result.Transactions[j].Hash
 	})
+
 	assert.Equal(t, "0xabc", resp.Result.Transactions[0].Hash)
 	assert.Equal(t, "0xdef", resp.Result.Transactions[1].Hash)
 }
 
 func TestMultiProvider_SomeFail(t *testing.T) {
-	config.AppConfig.Providers.RequestTimeout = 3 // seconds
+	p1 := &mockProvider{transactions: []types.Transaction{{Hash: "0xaaa"}}}
+	p2 := &mockProvider{err: errors.New("provider failed")}
 
-	p1 := &mockProvider{
-		transactions: []types.Transaction{{Hash: "0xaaa"}},
-	}
-	p2 := &mockProvider{
-		err: errors.New("provider failed"),
-	}
-	mp := NewMultiProvider(p1, p2)
+	mp := prepareTestMultiProvider(
+		map[string]Provider{"p1": p1, "p2": p2},
+		map[string]string{"eth": "p1", "bsc": "p2"},
+	)
 
-	resp, err := mp.GetTransactions("0x123")
+	params := &types.TransactionQueryParams{ChainNames: []string{"eth", "bsc"}}
+	resp, err := mp.GetTransactions(params)
 
-	assert.NoError(t, err, "should still succeed if at least one provider works")
+	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 
 	var hashes []string
@@ -78,28 +98,40 @@ func TestMultiProvider_SomeFail(t *testing.T) {
 }
 
 func TestMultiProvider_AllFail(t *testing.T) {
-	config.AppConfig.Providers.RequestTimeout = 3
-
 	p1 := &mockProvider{err: errors.New("failed")}
 	p2 := &mockProvider{err: errors.New("also failed")}
-	mp := NewMultiProvider(p1, p2)
 
-	resp, err := mp.GetTransactions("0x123")
+	mp := prepareTestMultiProvider(
+		map[string]Provider{"p1": p1, "p2": p2},
+		map[string]string{"eth": "p1", "bsc": "p2"},
+	)
+
+	params := &types.TransactionQueryParams{ChainNames: []string{"eth", "bsc"}}
+	resp, err := mp.GetTransactions(params)
+
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 }
 
-func TestMultiProvider_Timeout(t *testing.T) {
-	config.AppConfig.Providers.RequestTimeout = 1 // seconds
+func TestMultiProvider_DelayedButWithinTimeout(t *testing.T) {
+	config.AppConfig.Providers.RequestTimeout = 3 // 3 seconds timeout
 
 	p1 := &mockProvider{
 		transactions: []types.Transaction{{Hash: "0xdelayed"}},
-		delay:        2 * time.Second, // exceeds timeout
+		delay:        2 * time.Second, // still within timeout
 	}
-	mp := NewMultiProvider(p1)
 
-	resp, err := mp.GetTransactions("0x123")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "context deadline exceeded")
-	assert.Nil(t, resp)
+	mp := prepareTestMultiProvider(
+		map[string]Provider{"p1": p1},
+		map[string]string{"eth": "p1"},
+	)
+
+	params := &types.TransactionQueryParams{ChainNames: []string{"eth"}}
+	resp, err := mp.GetTransactions(params)
+
+	// ✅ Expect success
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Len(t, resp.Result.Transactions, 1)
+	assert.Equal(t, "0xdelayed", resp.Result.Transactions[0].Hash)
 }

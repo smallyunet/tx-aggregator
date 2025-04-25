@@ -2,55 +2,50 @@ package consul
 
 import (
 	"fmt"
+	"os"
+	"tx-aggregator/types"
 
 	"github.com/spf13/viper"
 )
 
-// ------------------------------------------------------------
-// Data structures — corresponding to bootstrap.test2.yaml
-// ------------------------------------------------------------
-
-// consul: node
-type ConsulBootstrap struct {
-	Address    string `yaml:"address"`    // 10.234.99.5:8500
-	Scheme     string `yaml:"scheme"`     // http / https
-	Datacenter string `yaml:"datacenter"` // dc1…
-	Token      string `yaml:"token"`      // ACL token, can be empty
-}
-
-// service: node
-type ServiceBootstrap struct {
-	Name string `yaml:"name"` // tx-aggregator
-	IP   string `yaml:"ip"`   // Leave empty to detect local IP at runtime
-	Port int    `yaml:"port"` // 0 = use runtime Server.Port
-}
-
-// BootstrapConfig top-level structure
-type BootstrapConfig struct {
-	Consul  ConsulBootstrap  `yaml:"consul"`
-	Service ServiceBootstrap `yaml:"service"`
-}
-
-// ------------------------------------------------------------
-// Read function
-// ------------------------------------------------------------
-
-// LoadBootstrap reads and parses bootstrap.test2.yaml, returning the filled struct.
-// path can be an absolute path or a relative path (e.g., `config/bootstrap.test2.yaml`).
-func LoadBootstrap(path string) (*BootstrapConfig, error) {
+// LoadBootstrap reads and parses the bootstrap YAML configuration file.
+// It allows overrides from environment variables.
+// Path can be relative or absolute, e.g., "config/bootstrap.yaml".
+func LoadBootstrap(path string) (*types.BootstrapConfig, error) {
 	v := viper.New()
-	v.SetConfigFile(path) // Specify the file
+	v.SetConfigFile(path)
 	v.SetConfigType("yaml")
 
-	// 1) Read the file
+	// Step 1: Read the file
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("read bootstrap config: %w", err)
 	}
 
-	// 2) Deserialize
-	var cfg BootstrapConfig
+	// Step 2: Unmarshal into struct
+	var cfg types.BootstrapConfig
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshal bootstrap config: %w", err)
+	}
+
+	// Step 3: Override fields with environment variables if present
+	if env := os.Getenv("CONSUL_ADDRESS"); env != "" {
+		cfg.Consul.Address = env
+	}
+	if env := os.Getenv("CONSUL_SCHEME"); env != "" {
+		cfg.Consul.Scheme = env
+	}
+	if env := os.Getenv("CONSUL_TOKEN"); env != "" {
+		cfg.Consul.Token = env
+	}
+	if env := os.Getenv("SERVICE_IP"); env != "" {
+		cfg.Service.IP = env
+	}
+	if env := os.Getenv("SERVICE_PORT"); env != "" {
+		// Optionally parse string to int if needed
+		var port int
+		if _, err := fmt.Sscanf(env, "%d", &port); err == nil {
+			cfg.Service.Port = port
+		}
 	}
 
 	return &cfg, nil

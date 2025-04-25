@@ -4,10 +4,17 @@ services:
   app-1:
     build: .
     ports:
-      - "8050:8050"
+      - "${APP_PORT1:-8050}:8050"
     environment:
       - APP_ENV=${APP_ENV:-test}
-      - APP_PORT=8050
+      - APP_PORT=${APP_PORT1:-8050}
+      - CONSUL_ADDRESS=${CONSUL_ADDRESS:-10.234.99.5:8500}
+      - CONSUL_SCHEME=${CONSUL_SCHEME:-http}
+      - CONSUL_DATACENTER=${CONSUL_DATACENTER:-dc1}
+      - CONSUL_TOKEN=${CONSUL_TOKEN:-}
+      - SERVICE_NAME=${SERVICE_NAME:-tx-aggregator}
+      - SERVICE_IP=${SERVICE_IP:-10.234.99.5}
+      - SERVICE_PORT=${APP_PORT1:-8050}
     volumes:
       - ./config:/app/config
       - ./consul:/app/consul
@@ -16,10 +23,17 @@ services:
   app-2:
     build: .
     ports:
-      - "8051:8051"
+      - "${APP_PORT2:-8051}:8051"
     environment:
       - APP_ENV=${APP_ENV:-test}
-      - APP_PORT=8051
+      - APP_PORT=${APP_PORT2:-8051}
+      - CONSUL_ADDRESS=${CONSUL_ADDRESS:-10.234.99.5:8500}
+      - CONSUL_SCHEME=${CONSUL_SCHEME:-http}
+      - CONSUL_DATACENTER=${CONSUL_DATACENTER:-dc1}
+      - CONSUL_TOKEN=${CONSUL_TOKEN:-}
+      - SERVICE_NAME=${SERVICE_NAME:-tx-aggregator}
+      - SERVICE_IP=${SERVICE_IP:-10.234.99.5}
+      - SERVICE_PORT=${APP_PORT2:-8051}
     volumes:
       - ./config:/app/config
       - ./consul:/app/consul

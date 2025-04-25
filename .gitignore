@@ -172,3 +172,4 @@ Thumbs.db
 
 tx-aggregator
 testcase*.txt
+.env

@@ -3,27 +3,14 @@ package consul
 import (
 	"fmt"
 	"time"
+	"tx-aggregator/types"
 
 	"github.com/hashicorp/consul/api"
 )
 
-// Options describes all the dynamic information required for a service registration.
-type Options struct {
-	Name       string            // Service name, e.g., "tx-aggregator"
-	ID         string            // Unique instance ID, recommended format: Name-PORT or Name-UUID
-	Address    string            // Host IP
-	Port       int               // Service listening port
-	Tags       []string          // Optional: Consul Tags
-	Meta       map[string]string // Optional: Metadata
-	HealthPath string            // Health check HTTP path, e.g., "/health"
-	Interval   time.Duration     // Check interval
-	Timeout    time.Duration     // Timeout
-	Deregister time.Duration     // Automatically deregister after continuous failures
-}
-
 // Register registers the service to the local Consul Agent.
 // Returns: a deregistration function (can be called on exit) and a possible error.
-func Register(client *api.Client, opt Options) (func() error, error) {
+func Register(client *api.Client, opt types.Options) (func() error, error) {
 	if opt.Interval == 0 {
 		opt.Interval = 10 * time.Second
 	}

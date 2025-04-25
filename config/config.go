@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/viper"
 	_ "github.com/spf13/viper/remote" // enables remote KV support
-	"tx-aggregator/consul"
 	"tx-aggregator/logger"
 	"tx-aggregator/types"
 )
@@ -15,7 +14,7 @@ import (
 var AppConfig types.Config
 
 // Init loads application configuration from Consul KV, given a BootstrapConfig.
-func Init(bootstrap *consul.BootstrapConfig) {
+func Init(bootstrap *types.BootstrapConfig) {
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "dev"
