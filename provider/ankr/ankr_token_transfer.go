@@ -32,6 +32,7 @@ func (p *AnkrProvider) GetTokenTransfers(params *types.TransactionQueryParams) (
 		Method:  "ankr_getTokenTransfers",
 		Params: map[string]interface{}{
 			"blockchain": blockchains,
+			"descOrder":  true,
 			"pageSize":   config.AppConfig.Ankr.RequestPageSize,
 			"address":    address,
 		},
