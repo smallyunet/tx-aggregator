@@ -2,12 +2,13 @@ package ankr
 
 import (
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"strings"
 	"tx-aggregator/logger"
 	"tx-aggregator/provider"
 	"tx-aggregator/types"
 	"tx-aggregator/utils"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // AnkrProvider implements the Provider interface for interacting with Ankr's blockchain API

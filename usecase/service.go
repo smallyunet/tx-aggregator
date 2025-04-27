@@ -85,6 +85,12 @@ func (s *Service) postProcess(resp *types.TransactionResponse, params *types.Tra
 		Int("before_filter", before).
 		Msg("Filtered transactions by chain")
 
+	FilterNativeShadowTx(resp)
+	logger.Log.Debug().
+		Int("filtered_native_shadow", len(resp.Result.Transactions)).
+		Int("before_filter", before).
+		Msg("Filtered native shadow transactions")
+
 	// Token or native coin filter
 	if params.TokenAddress != "" {
 		before = len(resp.Result.Transactions)
@@ -104,7 +110,7 @@ func (s *Service) postProcess(resp *types.TransactionResponse, params *types.Tra
 	}
 
 	// Sort and limit
-	SortTransactionResponseByHeightAndIndex(resp, true)
+	SortTransactionResponseByHeightAndIndex(resp, false)
 	resp = LimitTransactions(resp, config.AppConfig.Response.Max)
 	logger.Log.Debug().
 		Int("final_transaction_count", len(resp.Result.Transactions)).

@@ -120,3 +120,36 @@ func SetServerChainNames(resp *types.TransactionResponse) *types.TransactionResp
 	}
 	return resp
 }
+
+// FilterNativeShadowTx removes the redundant native (coinType == 1) “shadow”
+// / transaction that accompanies an ERC-20 transfer (coinType == 2) with the
+// same hash. The function rewrites resp.Result.Transactions in place.
+func FilterNativeShadowTx(resp *types.TransactionResponse) {
+	if resp == nil || len(resp.Result.Transactions) == 0 {
+		return // nothing to filter
+	}
+
+	// Pass 1: collect the hashes of every ERC-20 transfer.
+	tokenTxHashes := make(map[string]struct{}, len(resp.Result.Transactions))
+	for _, tx := range resp.Result.Transactions {
+		if tx.CoinType == 2 {
+			tokenTxHashes[tx.Hash] = struct{}{}
+		}
+	}
+
+	// Pass 2: copy transactions we want to keep into the same slice:
+	//   • all token transfers
+	//   • any native transfer that is *not* a zero-value shadow of a token transfer
+	keep := resp.Result.Transactions[:0] // reuse underlying memory
+	for _, tx := range resp.Result.Transactions {
+		if tx.CoinType == 1 {
+			if _, paired := tokenTxHashes[tx.Hash]; paired {
+				// Skip the shadow native transaction.
+				continue
+			}
+		}
+		keep = append(keep, tx)
+	}
+
+	resp.Result.Transactions = keep
+}
