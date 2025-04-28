@@ -64,7 +64,7 @@ func (s *Service) GetTransactions(params *types.TransactionQueryParams) (*types.
 	logger.Log.Debug().
 		Int("filtered_native_shadow", len(resp.Result.Transactions)).
 		Int("before_filter", before).
-		Msg("Filtered native shadow transactions")
+		Msg("Filtered native shadow transactions before cache")
 
 	resp = FilterTransactionsByInvolvedAddress(resp, params)
 	logger.Log.Debug().
@@ -91,6 +91,12 @@ func (s *Service) postProcess(resp *types.TransactionResponse, params *types.Tra
 		Int("filtered_by_chain", len(resp.Result.Transactions)).
 		Int("before_filter", before).
 		Msg("Filtered transactions by chain")
+
+	FilterNativeShadowTx(resp)
+	logger.Log.Debug().
+		Int("filtered_native_shadow", len(resp.Result.Transactions)).
+		Int("before_filter", before).
+		Msg("Filtered native shadow transactions in post-process")
 
 	// Token or native coin filter
 	if params.TokenAddress != "" {
