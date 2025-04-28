@@ -69,7 +69,7 @@ func (t *BlockscoutProvider) transformBlockscoutTokenTransfers(
 			Nonce:            "",                   // Not provided
 			Type:             types.TxTypeTransfer, // Standard token transfer
 			CoinType:         types.CoinTypeToken,  // Token type
-			TokenDisplayName: tt.Token.Name,
+			TokenDisplayName: tt.Token.Symbol,
 			Decimals:         decimals,
 			CreatedTime:      unixTime,
 			ModifiedTime:     unixTime,

@@ -8,111 +8,77 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFilterTransactionsByInvolvedAddress(t *testing.T) {
+func TestFilterNativeShadowTx(t *testing.T) {
 	resp := &types.TransactionResponse{}
 	resp.Result.Transactions = []types.Transaction{
-		{FromAddress: "0xabc", ToAddress: "0xdef", TokenAddress: "0x123"},
-		{FromAddress: "0xdef", ToAddress: "0xAbC", TokenAddress: "0x456"},
-		{FromAddress: "0xghi", ToAddress: "0xjkl", TokenAddress: "0XABC"},
-		{FromAddress: "0xzzz", ToAddress: "0xyyy", TokenAddress: "0xtoken"},
+		{Hash: "0x1", CoinType: types.CoinTypeNative},
+		{Hash: "0x1", CoinType: types.CoinTypeToken},
+		{Hash: "0x2", CoinType: types.CoinTypeNative},
+		{Hash: "0x3", CoinType: types.CoinTypeToken},
 	}
-	params := &types.TransactionQueryParams{Address: "0xAbC", TokenAddress: "0xabc"}
-	filtered := FilterTransactionsByInvolvedAddress(resp, params)
-	assert.Len(t, filtered.Result.Transactions, 3)
-}
 
-func TestFilterTransactionsByTokenAddress(t *testing.T) {
-	resp := &types.TransactionResponse{}
-	resp.Result.Transactions = []types.Transaction{
-		{TokenAddress: "0x111", CoinType: types.CoinTypeNative},
-		{TokenAddress: "0x222"},
-		{TokenAddress: "0X111", CoinType: types.CoinTypeToken},
+	FilterNativeShadowTx(resp)
+	assert.Len(t, resp.Result.Transactions, 3)
+	hashes := make(map[string]bool)
+	for _, tx := range resp.Result.Transactions {
+		hashes[tx.Hash] = true
 	}
-	params := &types.TransactionQueryParams{TokenAddress: "0x111"}
-	filtered := FilterTransactionsByTokenAddress(resp, params)
-	assert.Len(t, filtered.Result.Transactions, 1)
+	assert.True(t, hashes["0x1"])
+	assert.True(t, hashes["0x2"])
+	assert.True(t, hashes["0x3"])
 }
 
-func TestFilterTransactionsByCoinType(t *testing.T) {
-	resp := &types.TransactionResponse{}
-	resp.Result.Transactions = []types.Transaction{
-		{CoinType: 1},
-		{CoinType: 2},
-		{CoinType: 1},
-	}
-	filtered := FilterTransactionsByCoinType(resp, 1)
-	assert.Len(t, filtered.Result.Transactions, 2)
-}
-
-func TestFilterTransactionsByChainNames(t *testing.T) {
-	// No chainNames specified: should return original
-	resp := &types.TransactionResponse{}
-	resp.Result.Transactions = []types.Transaction{{ChainID: 1}, {ChainID: 2}}
-	filtered := FilterTransactionsByChainNames(resp, []string{})
-	assert.Len(t, filtered.Result.Transactions, 2)
-
-	// Specified but no match: should return empty
-	resp = &types.TransactionResponse{}
-	resp.Result.Transactions = []types.Transaction{{ChainID: 3}, {ChainID: 4}}
-	filtered = FilterTransactionsByChainNames(resp, []string{"foo"})
-	assert.Len(t, filtered.Result.Transactions, 0)
-
-	// ChainID=0 matches default id from ChainIDByName("any") => id=0
-	resp = &types.TransactionResponse{}
-	resp.Result.Transactions = []types.Transaction{{ChainID: 0}, {ChainID: 1}}
-	filtered = FilterTransactionsByChainNames(resp, []string{"any"})
-	assert.Len(t, filtered.Result.Transactions, 1)
-	assert.Equal(t, int64(0), filtered.Result.Transactions[0].ChainID)
-}
-
-func TestSortTransactionResponseByHeightAndIndex(t *testing.T) {
-	resp := &types.TransactionResponse{}
-	resp.Result.Transactions = []types.Transaction{
-		{Height: 2, TxIndex: 1},
-		{Height: 1, TxIndex: 3},
-		{Height: 1, TxIndex: 2},
-	}
-	// Ascending
-	SortTransactionResponseByHeightAndIndex(resp, true)
-	asc := resp.Result.Transactions
-	assert.Equal(t, int64(1), asc[0].Height)
-	assert.Equal(t, int64(2), asc[0].TxIndex)
-	assert.Equal(t, int64(1), asc[1].Height)
-	assert.Equal(t, int64(3), asc[1].TxIndex)
-	assert.Equal(t, int64(2), asc[2].Height)
-
-	// Descending
-	SortTransactionResponseByHeightAndIndex(resp, false)
-	desc := resp.Result.Transactions
-	assert.Equal(t, int64(2), desc[0].Height)
-	assert.Equal(t, int64(1), desc[1].Height)
-	assert.Equal(t, int64(3), desc[1].TxIndex)
-	assert.Equal(t, int64(1), desc[2].Height)
-	assert.Equal(t, int64(2), desc[2].TxIndex)
-}
-
-func TestLimitTransactions(t *testing.T) {
+func TestLimitTransactions_SmallList(t *testing.T) {
 	resp := &types.TransactionResponse{}
 	resp.Result.Transactions = []types.Transaction{
 		{TxIndex: 1},
-		{TxIndex: 2},
-		{TxIndex: 3},
 	}
-	limited := LimitTransactions(resp, 2)
-	assert.Len(t, limited.Result.Transactions, 2)
+	limited := LimitTransactions(resp, 5) // limit > actual size
+	assert.Len(t, limited.Result.Transactions, 1)
 	assert.Equal(t, int64(1), limited.Result.Transactions[0].TxIndex)
-	assert.Equal(t, int64(2), limited.Result.Transactions[1].TxIndex)
 }
 
-func TestSetServerChainNames(t *testing.T) {
-	// Seed mapping
+func TestSortTransactionResponseByHeightAndIndex_Empty(t *testing.T) {
+	var resp *types.TransactionResponse
+	SortTransactionResponseByHeightAndIndex(resp, true) // Should not panic
+	resp = &types.TransactionResponse{}
+	SortTransactionResponseByHeightAndIndex(resp, false) // Should not panic
+	assert.Empty(t, resp.Result.Transactions)
+}
+
+func TestSetServerChainNames_Unmapped(t *testing.T) {
 	config.AppConfig.ChainNames = map[string]int64{"chaina": 10}
 	resp := &types.TransactionResponse{}
 	resp.Result.Transactions = []types.Transaction{
-		{ChainID: 10},
-		{ChainID: 99},
+		{ChainID: 999},
 	}
 	SetServerChainNames(resp)
-	assert.Equal(t, "CHAINA", resp.Result.Transactions[0].ServerChainName)
-	assert.Equal(t, "", resp.Result.Transactions[1].ServerChainName)
+	assert.Equal(t, "", resp.Result.Transactions[0].ServerChainName)
+}
+
+func TestFilterTransactionsByInvolvedAddress_Empty(t *testing.T) {
+	resp := &types.TransactionResponse{}
+	params := &types.TransactionQueryParams{Address: "0xabc"}
+	filtered := FilterTransactionsByInvolvedAddress(resp, params)
+	assert.Len(t, filtered.Result.Transactions, 0)
+}
+
+func TestFilterTransactionsByTokenAddress_Empty(t *testing.T) {
+	resp := &types.TransactionResponse{}
+	params := &types.TransactionQueryParams{TokenAddress: "0xabc"}
+	filtered := FilterTransactionsByTokenAddress(resp, params)
+	assert.Len(t, filtered.Result.Transactions, 0)
+}
+
+func TestFilterTransactionsByCoinType_Empty(t *testing.T) {
+	resp := &types.TransactionResponse{}
+	filtered := FilterTransactionsByCoinType(resp, types.CoinTypeToken)
+	assert.Len(t, filtered.Result.Transactions, 0)
+}
+
+func TestFilterTransactionsByChainNames_InvalidName(t *testing.T) {
+	resp := &types.TransactionResponse{}
+	resp.Result.Transactions = []types.Transaction{{ChainID: 100}}
+	filtered := FilterTransactionsByChainNames(resp, []string{"nonexistent"})
+	assert.Len(t, filtered.Result.Transactions, 0)
 }

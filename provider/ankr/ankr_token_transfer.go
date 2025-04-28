@@ -114,7 +114,7 @@ func (a *AnkrProvider) transformAnkrTokenTransfers(
 			Nonce:            "", // not available
 			Type:             types.TxTypeTransfer,
 			CoinType:         types.CoinTypeToken,
-			TokenDisplayName: tr.TokenName,
+			TokenDisplayName: tr.TokenSymbol,
 			Decimals:         tr.TokenDecimals,
 			CreatedTime:      tr.Timestamp,
 			ModifiedTime:     tr.Timestamp,

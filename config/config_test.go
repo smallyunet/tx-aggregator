@@ -36,6 +36,6 @@ func TestInit_WithLocalFileOnly(t *testing.T) {
 	// Assert that values are loaded correctly from env or default
 	assert.Equal(t, 9090, AppConfig.Server.Port, "APP_PORT env should override default")
 	assert.Equal(t, 60, AppConfig.Cache.TTLSeconds, "Default cache TTL should be 60")
-	assert.Equal(t, int8(0), AppConfig.Log.Level, "Default log level should be 1")
+	assert.Equal(t, int8(1), AppConfig.Log.Level, "Default log level should be 1")
 	assert.Equal(t, 50, AppConfig.Response.Max, "Default response max should be 50")
 }
