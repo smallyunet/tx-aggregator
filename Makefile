@@ -14,7 +14,7 @@ AIR=air
 # Default environment
 APP_ENV ?= dev
 
-.PHONY: all build clean run start dev build-linux deps install-air
+.PHONY: all build clean run start dev build-linux deps install-air integration-test unit-test
 
 all: build
 
@@ -57,3 +57,11 @@ deps:
 install-air:
 	@echo "Installing Air (hot reload)..."
 	curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(GOPATH)/bin
+
+unit-test:
+	@echo "Running unit tests..."
+	$(GOTEST) ./... -v
+
+integration-test:
+	@echo "Running integration tests..."
+	$(GOCMD) run ./cmd/tx-aggregator-integration

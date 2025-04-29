@@ -83,7 +83,6 @@ func (q *QuickNodeProvider) GetTransactions(params *types.TransactionQueryParams
 		Result: struct {
 			Transactions []types.Transaction `json:"transactions"`
 		}{Transactions: all},
-		Id: 1,
 	}, nil
 }
 

@@ -158,7 +158,6 @@ func (m *MultiProvider) GetTransactions(params *types.TransactionQueryParams) (*
 
 	// ----- 4. Merge & return --------------------------------------------------
 	return &types.TransactionResponse{
-		Id: 1,
 		Result: struct {
 			Transactions []types.Transaction `json:"transactions"`
 		}{

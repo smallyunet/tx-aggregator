@@ -28,7 +28,6 @@ func (m *mockProvider) GetTransactions(params *types.TransactionQueryParams) (*t
 	return &types.TransactionResponse{
 		Code:    0,
 		Message: "ok",
-		Id:      1,
 		Result: struct {
 			Transactions []types.Transaction `json:"transactions"`
 		}{

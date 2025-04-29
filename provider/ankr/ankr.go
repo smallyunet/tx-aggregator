@@ -102,7 +102,6 @@ func (a *AnkrProvider) GetTransactions(params *types.TransactionQueryParams) (*t
 		}{
 			Transactions: transactions,
 		},
-		Id: 1,
 	}, nil
 }
 

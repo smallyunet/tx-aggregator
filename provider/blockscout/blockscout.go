@@ -151,7 +151,6 @@ func (p *BlockscoutProvider) GetTransactions(params *types.TransactionQueryParam
 		Result: struct {
 			Transactions []types.Transaction `json:"transactions"`
 		}{Transactions: allTxs},
-		Id: int(p.chainID),
 	}, nil
 }
 
