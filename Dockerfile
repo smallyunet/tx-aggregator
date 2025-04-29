@@ -10,8 +10,8 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Build the binary with a clear name
-RUN CGO_ENABLED=0 GOOS=linux go build -o tx-aggregator .
+# Build the binary from cmd/tx-aggregator
+RUN CGO_ENABLED=0 GOOS=linux go build -o tx-aggregator ./cmd/tx-aggregator
 
 # Final stage
 FROM alpine:latest

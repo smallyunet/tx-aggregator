@@ -1,10 +1,11 @@
+# 项目根目录
 root = "."
 tmp_dir = "tmp"
 
 [build]
-cmd = "go build -o ./tx-aggregator ."
-bin = "tx-aggregator"
-full_bin = "./tx-aggregator"
+cmd = "go build -o ./tmp/tx-aggregator ./cmd/tx-aggregator"
+bin = "tmp/tx-aggregator"
+full_bin = "tmp/tx-aggregator"
 include_ext = ["go", "tpl", "tmpl", "html", "yaml"]
 exclude_dir = ["assets", "tmp", "vendor"]
 include_dir = []

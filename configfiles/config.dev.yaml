@@ -7,7 +7,7 @@ server:
 # Redis cluster configuration
 redis:
   addrs:  # List of Redis server addresses
-    - 127.0.0.1:6370
+    - 127.0.0.1:6379
   password: ""  # Redis authentication password (empty for no password)
 
 providers:
