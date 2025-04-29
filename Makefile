@@ -60,7 +60,7 @@ install-air:
 
 unit-test:
 	@echo "Running unit tests..."
-	$(GOTEST) ./... -v
+	$(GOTEST) ./...
 
 integration-test:
 	@echo "Running integration tests..."
