@@ -21,9 +21,10 @@ WORKDIR /app
 # Copy binary only
 COPY --from=builder /app/tx-aggregator .
 
-# Optional: create non-root user
-RUN adduser -D appuser
-USER appuser
+# Create logs directory (for file logging)
+RUN mkdir -p /app/logs
+
+# Default user is root (no USER directive)
 
 # Expose application port
 EXPOSE 8080
