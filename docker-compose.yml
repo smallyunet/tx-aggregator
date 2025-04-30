@@ -17,7 +17,13 @@ services:
       - SERVICE_PORT=${APP_PORT1:-8050}
     volumes:
       - ./configfiles:/app/configfiles
+      - ./logs/app-1:/app/logs
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   app-2:
     build: .
@@ -35,4 +41,12 @@ services:
       - SERVICE_PORT=${APP_PORT2:-8051}
     volumes:
       - ./configfiles:/app/configfiles
+      - ./logs/app-2:/app/logs
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+        
