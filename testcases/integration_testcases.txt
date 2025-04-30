@@ -17,6 +17,7 @@ http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4
 http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=POL
 http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=BASE
 http://127.0.0.1:8080/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD&chainName=eth
+http://127.0.0.1:8080/transactions?address=0x6384075bb3C2a3D0EAa98c1f0139b55d8D23b90f&chainname=bsc
 
 
 # --- Query by address + tokenAddress ---
@@ -30,6 +31,9 @@ http://127.0.0.1:8080/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705
 
 http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&tokenAddress=native
 http://127.0.0.1:8080/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705a814D&tokenAddress=native
+
+# --- Query by address + chainName + tokenAddress=native ---
+http://127.0.0.1:8080/transactions?address=0x1CC0DbBae7C658c7def0fF883C8fcf4370153C1F&chainname=bsc&tokenAddress=native
 
 
 # --- Query by address + chainName + tokenAddress ---

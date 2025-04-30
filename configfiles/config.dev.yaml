@@ -50,6 +50,7 @@ cache:
 # Logging configuration
 log:
   level: 0  # Log level (0: DEBUG, 1: INFO, 2: WARN, 3: ERROR)
+  path: ./logs  # Directory for log files
 
 # Response configuration
 response:

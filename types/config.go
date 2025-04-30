@@ -55,7 +55,8 @@ type CacheConfig struct {
 
 // LogConfig holds logging level.
 type LogConfig struct {
-	Level int8 `mapstructure:"level"`
+	Level int8   `mapstructure:"level"`
+	Path  string `mapstructure:"path"`
 }
 
 // ResponseConfig limits response size.
