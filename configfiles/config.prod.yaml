@@ -7,7 +7,7 @@ server:
 # Redis cluster configuration
 redis:
   addrs:  # List of Redis server addresses
-    - 127.0.0.1:6379
+    - tantin-prd-wallet-tx-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com:6379
   password: ""  # Redis authentication password (empty for no password)
   ttl: 60  # Time-to-live for cached data in seconds
 
@@ -46,7 +46,7 @@ blockscout:
 
 # Logging configuration
 log:
-  level: 0  # Log level (0: DEBUG, 1: INFO, 2: WARN, 3: ERROR)
+  level: 1  # Log level (0: DEBUG, 1: INFO, 2: WARN, 3: ERROR)
   path: ./logs  # Directory for log files
 
 # Response configuration

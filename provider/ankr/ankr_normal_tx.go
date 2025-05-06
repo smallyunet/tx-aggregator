@@ -34,7 +34,7 @@ func (p *AnkrProvider) GetTransactionsByAddress(params *types.TransactionQueryPa
 			"blockchain":  blockchains,
 			"includeLogs": true,
 			"descOrder":   true,
-			"pageSize":    config.AppConfig.Ankr.RequestPageSize,
+			"pageSize":    config.Current().Ankr.RequestPageSize,
 			"address":     address,
 		},
 		ID: 1,

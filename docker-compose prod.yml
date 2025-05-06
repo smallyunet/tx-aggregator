@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8050}:8050"
+    environment:
+      - APP_ENV=${APP_ENV:-prod}
+      - APP_PORT=${APP_PORT:-8050}
+      - CONSUL_ADDRESS=${CONSUL_ADDRESS:-wallet-consul-internal.tantin.com:8500}
+      - CONSUL_SCHEME=${CONSUL_SCHEME:-http}
+      - CONSUL_DATACENTER=${CONSUL_DATACENTER:-dc1}
+      - CONSUL_TOKEN=${CONSUL_TOKEN:-}
+      - SERVICE_NAME=${SERVICE_NAME:-tx-aggregator}
+      - SERVICE_IP=${SERVICE_IP:-127.0.0.1}
+      - SERVICE_PORT=${APP_PORT:-8050}
+    volumes:
+      - ./configfiles:/app/configfiles
+      - "${HOST_LOG_PATH}:/app/logs"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+
+        

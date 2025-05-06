@@ -57,7 +57,7 @@ func parseAndValidateChainNames(rawChainNames string) ([]string, error) {
 
 	if rawChainNames == "" {
 		// No input provided, return all available chain names
-		for name := range config.AppConfig.ChainNames {
+		for name := range config.Current().ChainNames {
 			validChainNames = append(validChainNames, name)
 		}
 	} else {

@@ -1,0 +1,10 @@
+consul:
+  address: "wallet-consul-internal.tantin.com:8500"
+  scheme: "http"
+  datacenter: "dc1"
+  token: ""
+
+service:
+  name: "tx-aggregator"
+  ip: "127.0.0.1"     # or leave empty and detect at runtime
+  port: 0             # 0 = use server.port from runtime config

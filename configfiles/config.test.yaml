@@ -9,6 +9,7 @@ redis:
   addrs:  # List of Redis server addresses
     - tantin-test-address-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com:6379
   password: ""  # Redis authentication password (empty for no password)
+  ttl: 60  # Time-to-live for cached data in seconds
 
 providers:
   request_timeout: 60
@@ -42,10 +43,6 @@ blockscout:
     request_page_size: 100
     rpc_url: https://rpc.tantin.com
     rpc_request_timeout: 90
-
-# Cache configuration
-cache:
-  ttl: 60  # Time-to-live for cached data in seconds
 
 # Logging configuration
 log:

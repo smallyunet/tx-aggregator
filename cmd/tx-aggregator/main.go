@@ -49,7 +49,7 @@ func main() {
 	config.Init(bootstrapCfg)
 
 	// 3. Init logger (after config)
-	logger.Init(config.AppConfig.Log.Level, config.AppConfig.Log.Path)
+	logger.Init(config.Current().Log.Level, config.Current().Log.Path)
 
 	// 4. Setup Consul client
 	logger.Log.Info().Str("consul.address", bootstrapCfg.Consul.Address).Msg("Creating Consul API client")
@@ -66,8 +66,8 @@ func main() {
 	logger.Log.Info().Msg("Connected to Consul successfully")
 
 	// 5. Setup Redis
-	logger.Log.Info().Strs("redis.addrs", config.AppConfig.Redis.Addrs).Msg("Initializing Redis cache")
-	redisCache := cache.NewRedisCache(config.AppConfig.Redis.Addrs, config.AppConfig.Redis.Password)
+	logger.Log.Info().Strs("redis.addrs", config.Current().Redis.Addrs).Msg("Initializing Redis cache")
+	redisCache := cache.NewRedisCache(config.Current().Redis.Addrs, config.Current().Redis.Password)
 	if redisCache == nil {
 		logger.Log.Fatal().Msg("Failed to initialize Redis cache")
 	}
@@ -76,10 +76,10 @@ func main() {
 	// 6. Setup providers
 	logger.Log.Info().Msg("Setting up providers")
 	registry := make(map[string]provider.Provider)
-	registry["ankr"] = ankr.NewAnkrProvider(config.AppConfig.Ankr.APIKey, config.AppConfig.Ankr.URL)
+	registry["ankr"] = ankr.NewAnkrProvider(config.Current().Ankr.APIKey, config.Current().Ankr.URL)
 	logger.Log.Info().Msg("Ankr provider registered")
 
-	for _, bs := range config.AppConfig.Blockscout {
+	for _, bs := range config.Current().Blockscout {
 		chainID, err := utils.ChainIDByName(bs.ChainName)
 		if err != nil {
 			logger.Log.Warn().Str("chain", bs.ChainName).Msg("Invalid chain name, skipping Blockscout")
@@ -103,7 +103,7 @@ func main() {
 	// 8. Register service in Consul
 	port := bootstrapCfg.Service.Port
 	if port == 0 {
-		port = config.AppConfig.Server.Port
+		port = config.Current().Server.Port
 	}
 	serviceIP := bootstrapCfg.Service.IP
 	if serviceIP == "" {

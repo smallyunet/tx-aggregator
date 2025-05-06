@@ -112,7 +112,7 @@ func (s *Service) postProcess(resp *types.TransactionResponse, params *types.Tra
 
 	// Sort and limit
 	SortTransactionResponseByHeightAndIndex(resp, false)
-	resp = LimitTransactions(resp, config.AppConfig.Response.Max)
+	resp = LimitTransactions(resp, config.Current().Response.Max)
 	logger.Log.Debug().
 		Int("final_transaction_count", len(resp.Result.Transactions)).
 		Msg("Final sorted and limited transaction count")

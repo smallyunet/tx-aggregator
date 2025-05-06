@@ -53,7 +53,7 @@ type MultiProvider struct {
 func NewMultiProvider(registry map[string]Provider) *MultiProvider {
 	return &MultiProvider{
 		providers:      registry,
-		chainProviders: config.AppConfig.Providers.ChainProviders, // YAML-driven
+		chainProviders: config.Current().Providers.ChainProviders, // YAML-driven
 	}
 }
 
@@ -98,7 +98,7 @@ func (m *MultiProvider) GetTransactions(params *types.TransactionQueryParams) (*
 	// ----- 2. Fan-out calls ---------------------------------------------------
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		time.Duration(config.AppConfig.Providers.RequestTimeout)*time.Second,
+		time.Duration(config.Current().Providers.RequestTimeout)*time.Second,
 	)
 	defer cancel()
 

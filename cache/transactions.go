@@ -24,7 +24,7 @@ func (r *RedisCache) ParseTxAndSaveToCache(
 		return nil
 	}
 
-	ttl := time.Duration(config.AppConfig.Cache.TTLSeconds) * time.Second
+	ttl := time.Duration(config.Current().Redis.TTLSeconds) * time.Second
 	logger.Log.Info().
 		Int("txs", len(resp.Result.Transactions)).
 		Dur("ttl", ttl).

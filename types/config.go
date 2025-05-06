@@ -7,7 +7,6 @@ type Config struct {
 	Providers  ProvidersConfig    `mapstructure:"providers"`
 	Ankr       AnkrConfig         `mapstructure:"ankr"`
 	Blockscout []BlockscoutConfig `mapstructure:"blockscout"`
-	Cache      CacheConfig        `mapstructure:"cache"`
 	Log        LogConfig          `mapstructure:"log"`
 	Response   ResponseConfig     `mapstructure:"response"`
 	ChainNames map[string]int64   `mapstructure:"chain_names"`
@@ -20,8 +19,9 @@ type ServerConfig struct {
 
 // RedisConfig holds Redis connection details.
 type RedisConfig struct {
-	Addrs    []string `mapstructure:"addrs"`
-	Password string   `mapstructure:"password"`
+	Addrs      []string `mapstructure:"addrs"`
+	Password   string   `mapstructure:"password"`
+	TTLSeconds int      `mapstructure:"ttl"`
 }
 
 // ProvidersConfig holds provider-level settings.
@@ -46,11 +46,6 @@ type BlockscoutConfig struct {
 	RequestPageSize   int64  `mapstructure:"request_page_size"`
 	RPCURL            string `mapstructure:"rpc_url"`
 	RPCRequestTimeout int64  `mapstructure:"rpc_request_timeout"`
-}
-
-// CacheConfig holds Redis cache-related settings.
-type CacheConfig struct {
-	TTLSeconds int `mapstructure:"ttl"`
 }
 
 // LogConfig holds logging level.

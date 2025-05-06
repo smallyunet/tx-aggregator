@@ -10,7 +10,7 @@ import (
 // If the chain name is not found, it returns an error.
 func ChainIDByName(name string) (int64, error) {
 	upperName := strings.ToUpper(name)
-	for key, id := range config.AppConfig.ChainNames {
+	for key, id := range config.Current().ChainNames {
 		if strings.ToUpper(key) == upperName {
 			return id, nil
 		}
@@ -21,7 +21,7 @@ func ChainIDByName(name string) (int64, error) {
 // ChainNameByID returns the UPPERCASE chain name for a given chain ID.
 // If not found, it returns an error.
 func ChainNameByID(id int64) (string, error) {
-	for name, chainID := range config.AppConfig.ChainNames {
+	for name, chainID := range config.Current().ChainNames {
 		if chainID == id {
 			return strings.ToUpper(name), nil
 		}
@@ -33,7 +33,7 @@ func ChainNameByID(id int64) (string, error) {
 // If the chain name is not found, it returns an error.
 func AnkrChainIDByName(name string) (int64, error) {
 	upperName := strings.ToUpper(name)
-	for key, id := range config.AppConfig.Ankr.ChainIDs {
+	for key, id := range config.Current().Ankr.ChainIDs {
 		if strings.ToUpper(key) == upperName {
 			return id, nil
 		}
@@ -44,7 +44,7 @@ func AnkrChainIDByName(name string) (int64, error) {
 // AnkrChainNameByID returns the UPPERCASE chain name for a given Ankr chain ID.
 // If not found, it returns an error.
 func AnkrChainNameByID(id int64) (string, error) {
-	for name, chainID := range config.AppConfig.Ankr.ChainIDs {
+	for name, chainID := range config.Current().Ankr.ChainIDs {
 		if chainID == id {
 			return strings.ToUpper(name), nil
 		}
@@ -69,12 +69,12 @@ func AnkrChainNameByID(id int64) (string, error) {
 func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
 	// 1. No names supplied → use defaults immediately.
 	if len(paramNames) == 0 {
-		return config.AppConfig.Ankr.RequestBlockchains, nil
+		return config.Current().Ankr.RequestBlockchains, nil
 	}
 
 	// 2. Build reverse index: chain-ID → ankrName.
-	idToAnkr := make(map[int64]string, len(config.AppConfig.Ankr.ChainIDs))
-	for ankrName, id := range config.AppConfig.Ankr.ChainIDs {
+	idToAnkr := make(map[int64]string, len(config.Current().Ankr.ChainIDs))
+	for ankrName, id := range config.Current().Ankr.ChainIDs {
 		idToAnkr[id] = ankrName
 	}
 
@@ -100,7 +100,7 @@ func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
 
 	// 4. If everything was filtered out, revert to defaults.
 	if len(blockchains) == 0 {
-		return config.AppConfig.Ankr.RequestBlockchains, nil
+		return config.Current().Ankr.RequestBlockchains, nil
 	}
 	return blockchains, nil
 }

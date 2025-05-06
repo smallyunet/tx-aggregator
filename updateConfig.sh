@@ -16,3 +16,10 @@ curl --request PUT \
 curl http://10.234.10.222:8501/v1/kv/config/tx-aggregator/test
 
 
+# prod
+curl --request PUT \
+  --data-binary @configfiles/config.prod.yaml \
+  http://wallet-consul-internal.tantin.com:8500/v1/kv/config/tx-aggregator/prod
+
+curl http://wallet-consul-internal.tantin.com:8500/v1/kv/config/tx-aggregator/prod
+

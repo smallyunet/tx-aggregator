@@ -173,3 +173,6 @@ Thumbs.db
 testcase*.txt
 .env
 logs/
+.env.prod.*
+/tx-aggregator
+!/cmd/tx-aggregator
