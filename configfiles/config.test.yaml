@@ -60,3 +60,11 @@ chain_names:
   POL: 137      # Polygon (Matic)
   BASE: 8453    # Base Mainnet
   TTX: 12301   # Tantin chain ID
+
+# Native token name mapping by chain ID
+native_tokens:
+  "1": ETH
+  "56": BNB
+  "137": POL
+  "8453": ETH
+  "12301": CTC

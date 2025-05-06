@@ -104,3 +104,14 @@ func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
 	}
 	return blockchains, nil
 }
+
+// NativeTokenByChainID returns the native token name for a given chain ID.
+// If the chain ID is not found in the configuration, it returns an error.
+func NativeTokenByChainID(id int64) (string, error) {
+	idStr := fmt.Sprintf("%d", id)
+	token, ok := config.Current().NativeTokens[idStr]
+	if !ok {
+		return "", fmt.Errorf("native token not found for chain ID: %d", id)
+	}
+	return token, nil
+}

@@ -111,6 +111,14 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *types.AnkrTransactionResponse
 			tranType = types.TransTypeIn
 		}
 
+		nativeTokenName, err := utils.NativeTokenByChainID(chainID)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Int64("chain_id", chainID).
+				Msg("Failed to get native token name")
+		}
+
 		// Build transaction types
 		transaction := types.Transaction{
 			ChainID:          chainID,
@@ -131,7 +139,7 @@ func (a *AnkrProvider) transformAnkrNormalTx(resp *types.AnkrTransactionResponse
 			Nonce:            nonce,
 			Type:             txType,
 			CoinType:         types.CoinTypeNative,
-			TokenDisplayName: "",
+			TokenDisplayName: nativeTokenName,
 			Decimals:         types.NativeDefaultDecimals,
 			CreatedTime:      timestamp,
 			ModifiedTime:     timestamp,

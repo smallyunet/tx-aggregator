@@ -2,14 +2,15 @@ package types
 
 // Config represents the application configuration structure
 type Config struct {
-	Server     ServerConfig       `mapstructure:"server"`
-	Redis      RedisConfig        `mapstructure:"redis"`
-	Providers  ProvidersConfig    `mapstructure:"providers"`
-	Ankr       AnkrConfig         `mapstructure:"ankr"`
-	Blockscout []BlockscoutConfig `mapstructure:"blockscout"`
-	Log        LogConfig          `mapstructure:"log"`
-	Response   ResponseConfig     `mapstructure:"response"`
-	ChainNames map[string]int64   `mapstructure:"chain_names"`
+	Server       ServerConfig       `mapstructure:"server"`
+	Redis        RedisConfig        `mapstructure:"redis"`
+	Providers    ProvidersConfig    `mapstructure:"providers"`
+	Ankr         AnkrConfig         `mapstructure:"ankr"`
+	Blockscout   []BlockscoutConfig `mapstructure:"blockscout"`
+	Log          LogConfig          `mapstructure:"log"`
+	Response     ResponseConfig     `mapstructure:"response"`
+	ChainNames   map[string]int64   `mapstructure:"chain_names"`
+	NativeTokens map[string]string  `mapstructure:"native_tokens"`
 }
 
 // ServerConfig holds server-related configuration.

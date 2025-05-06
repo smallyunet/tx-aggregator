@@ -64,6 +64,14 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 				Msg("Failed to normalize transaction nonce")
 		}
 
+		nativeTokenName, err := utils.NativeTokenByChainID(t.chainID)
+		if err != nil {
+			logger.Log.Error().
+				Err(err).
+				Int64("chain_id", t.chainID).
+				Msg("Failed to get native token name")
+		}
+
 		// Construct the transaction
 		transaction := types.Transaction{
 			ChainID:          t.chainID,
@@ -83,7 +91,7 @@ func (t *BlockscoutProvider) transformBlockscoutNormalTx(
 			Nonce:            nonce,
 			Type:             types.TxTypeUnknown,  // Default type for native transfer
 			CoinType:         types.CoinTypeNative, // Native coin
-			TokenDisplayName: "",
+			TokenDisplayName: nativeTokenName,
 			Decimals:         types.NativeDefaultDecimals,
 			CreatedTime:      unixTime,
 			ModifiedTime:     unixTime,
