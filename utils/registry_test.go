@@ -2,24 +2,32 @@ package utils_test
 
 import (
 	"testing"
-	"tx-aggregator/config"
-	"tx-aggregator/utils"
 
 	"github.com/stretchr/testify/assert"
+	"tx-aggregator/config"
+	"tx-aggregator/types"
+	"tx-aggregator/utils"
 )
 
 func setupTestConfig() {
-	config.AppConfig.ChainNames = map[string]int64{
+	cfg := config.Current()
+
+	cfg.ChainNames = map[string]int64{
 		"ETH": 1,
 		"BSC": 56,
 		"op":  10,
 	}
 
-	config.AppConfig.Ankr.ChainIDs = map[string]int64{
-		"ETH":  1,
-		"AVAX": 43114,
-		"arb":  42161,
+	cfg.Ankr = types.AnkrConfig{
+		ChainIDs: map[string]int64{
+			"ETH":  1,
+			"AVAX": 43114,
+			"arb":  42161,
+		},
+		RequestBlockchains: []string{"eth", "avax"},
 	}
+
+	config.SetCurrentConfig(cfg)
 }
 
 func TestChainIDByName(t *testing.T) {
@@ -66,12 +74,12 @@ func TestChainNameByID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			chainName, err := utils.ChainNameByID(tt.input)
+			name, err := utils.ChainNameByID(tt.input)
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, chainName)
+				assert.Equal(t, tt.expected, name)
 			}
 		})
 	}

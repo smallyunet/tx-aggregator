@@ -2,11 +2,20 @@ package usecase
 
 import (
 	"testing"
-	"tx-aggregator/config"
-	"tx-aggregator/types"
 
 	"github.com/stretchr/testify/assert"
+	"tx-aggregator/config"
+	"tx-aggregator/types"
 )
+
+func setupTestChainNames() {
+	cfg := config.Current()
+	cfg.ChainNames = map[string]int64{
+		"chaina": 10,
+		"ETH":    1,
+	}
+	config.SetCurrentConfig(cfg)
+}
 
 func TestFilterNativeShadowTx(t *testing.T) {
 	resp := &types.TransactionResponse{}
@@ -33,7 +42,7 @@ func TestLimitTransactions_SmallList(t *testing.T) {
 	resp.Result.Transactions = []types.Transaction{
 		{TxIndex: 1},
 	}
-	limited := LimitTransactions(resp, 5) // limit > actual size
+	limited := LimitTransactions(resp, 5)
 	assert.Len(t, limited.Result.Transactions, 1)
 	assert.Equal(t, int64(1), limited.Result.Transactions[0].TxIndex)
 }
@@ -41,16 +50,18 @@ func TestLimitTransactions_SmallList(t *testing.T) {
 func TestSortTransactionResponseByHeightAndIndex_Empty(t *testing.T) {
 	var resp *types.TransactionResponse
 	SortTransactionResponseByHeightAndIndex(resp, true) // Should not panic
+
 	resp = &types.TransactionResponse{}
 	SortTransactionResponseByHeightAndIndex(resp, false) // Should not panic
+
 	assert.Empty(t, resp.Result.Transactions)
 }
 
 func TestSetServerChainNames_Unmapped(t *testing.T) {
-	config.AppConfig.ChainNames = map[string]int64{"chaina": 10}
+	setupTestChainNames() // inject {"chaina": 10, "ETH": 1}
 	resp := &types.TransactionResponse{}
 	resp.Result.Transactions = []types.Transaction{
-		{ChainID: 999},
+		{ChainID: 999}, // unmapped chain
 	}
 	SetServerChainNames(resp)
 	assert.Equal(t, "", resp.Result.Transactions[0].ServerChainName)
@@ -77,6 +88,7 @@ func TestFilterTransactionsByCoinType_Empty(t *testing.T) {
 }
 
 func TestFilterTransactionsByChainNames_InvalidName(t *testing.T) {
+	setupTestChainNames() // inject known chain names
 	resp := &types.TransactionResponse{}
 	resp.Result.Transactions = []types.Transaction{{ChainID: 100}}
 	filtered := FilterTransactionsByChainNames(resp, []string{"nonexistent"})

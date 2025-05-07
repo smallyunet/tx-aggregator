@@ -7,19 +7,23 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
+
 	"tx-aggregator/config"
 	"tx-aggregator/types"
 )
 
-func setupAppConfigForTest() {
-	config.AppConfig.ChainNames = map[string]int64{
+// setupTestConfig injects test config with mock ChainNames
+func setupTestConfig() {
+	cfg := config.Current()
+	cfg.ChainNames = map[string]int64{
 		"ETH": 1,
 		"BSC": 56,
 	}
+	config.SetCurrentConfig(cfg)
 }
 
 func TestParseTransactionQueryParams(t *testing.T) {
-	setupAppConfigForTest()
+	setupTestConfig()
 
 	tests := []struct {
 		name           string
@@ -94,7 +98,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 
 			app.Get("/tx", func(c *fiber.Ctx) error {
 				result, handlerErr = parseTransactionQueryParams(c)
-				return nil // not sending actual response
+				return nil
 			})
 
 			req := httptest.NewRequest(http.MethodGet, "/tx"+tt.query, nil)

@@ -169,3 +169,8 @@ func firstNonEmpty(candidates ...string) string {
 	}
 	return ""
 }
+
+// SetCurrentConfig is for testing purposes only.
+func SetCurrentConfig(cfg types.Config) {
+	runtimeCfg.Store(cfg)
+}

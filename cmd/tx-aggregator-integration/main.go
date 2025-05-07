@@ -39,9 +39,10 @@ var envFlag = flag.String("env", "local", "environment to run (local|test|prod|a
 // envHosts maps environment names to their base URLs.
 // Only the hostname / port differs between environments; all paths stay the same.
 var envHosts = map[string]string{
-	"local": "http://127.0.0.1:8080",
-	"test":  "http://nlb.devops.tantin.com:8000/api/tx-aggregator",
-	"prod":  "https://wallet-api.tantin.com/api/tx-aggregator",
+	"local":   "http://127.0.0.1:8080",
+	"test":    "http://nlb.devops.tantin.com:8000/api/tx-aggregator",
+	"prod":    "https://wallet-api.tantin.com/api/tx-aggregator",
+	"prod-in": "http://tx-aggregator.service.consul:8050",
 }
 
 // ---- entry point ------------------------------------------------------------

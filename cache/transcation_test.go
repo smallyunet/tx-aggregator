@@ -25,14 +25,13 @@ func newRedisCacheWithServer(t *testing.T, s *miniredis.Miniredis) *RedisCache {
 }
 
 func TestParseTxAndSaveToCache_Integration(t *testing.T) {
-	// ① share the same miniredis instance
 	s, err := miniredis.Run()
 	assert.NoError(t, err)
 	defer s.Close()
 
 	rc := newRedisCacheWithServer(t, s)
 
-	// ② prepare input data
+	// Prepare input data
 	resp := &types.TransactionResponse{}
 	resp.Result.Transactions = []types.Transaction{
 		{
@@ -46,15 +45,18 @@ func TestParseTxAndSaveToCache_Integration(t *testing.T) {
 		},
 	}
 
-	// ③ mock configuration
-	config.AppConfig.Cache.TTLSeconds = 100
-	config.AppConfig.ChainNames = map[string]int64{"ETH": 1}
+	// Inject config for test
+	cfg := config.Current()
+	cfg.Redis.TTLSeconds = 100
+	cfg.ChainNames = map[string]int64{"ETH": 1}
+	config.SetCurrentConfig(cfg)
 
+	// Call function under test
 	err = rc.ParseTxAndSaveToCache(resp, "0xUser")
 	assert.NoError(t, err)
 
-	// ④ assert that data was written successfully
-	keys := s.Keys() // read directly from the same miniredis instance
+	// Verify keys written to Redis
+	keys := s.Keys()
 	t.Logf("Keys in miniredis: %v", keys)
 	assert.NotEmpty(t, keys)
 }
@@ -66,8 +68,13 @@ func TestQueryTxFromCache_Integration(t *testing.T) {
 
 	rc := newRedisCacheWithServer(t, s)
 
-	// ① pre-write fake data
-	key := formatChainKey("0xUser", "ETH") // function should have been refactored to use chain name
+	// Inject mock config for chain ID ↔ name resolution
+	cfg := config.Current()
+	cfg.ChainNames = map[string]int64{"ETH": 1}
+	config.SetCurrentConfig(cfg)
+
+	// Pre-write fake data
+	key := formatChainKey("0xUser", "ETH")
 	txs := []types.Transaction{
 		{
 			Hash:    "0xabc",
@@ -75,10 +82,10 @@ func TestQueryTxFromCache_Integration(t *testing.T) {
 		},
 	}
 	bz, _ := json.Marshal(txs)
-	s.Set(key, string(bz))   // write directly to miniredis
-	s.SetTTL(key, time.Hour) // ensure the key does not expire
+	s.Set(key, string(bz))
+	s.SetTTL(key, time.Hour)
 
-	// ② query the cache
+	// Query the cache
 	params := &types.TransactionQueryParams{
 		Address:    "0xUser",
 		ChainNames: []string{"ETH"},
@@ -91,7 +98,6 @@ func TestQueryTxFromCache_Integration(t *testing.T) {
 }
 
 func TestQueryTxFromCache_EmptyChains(t *testing.T) {
-	// use an empty (unconnected Redis) RedisCache to verify logic for empty chain names
 	rc := &RedisCache{
 		client: nil,
 		ctx:    context.Background(),

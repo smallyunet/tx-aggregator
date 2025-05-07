@@ -2,6 +2,7 @@ package provider
 
 import (
 	"errors"
+	"os"
 	"sort"
 	"testing"
 	"time"
@@ -36,11 +37,35 @@ func (m *mockProvider) GetTransactions(params *types.TransactionQueryParams) (*t
 	}, nil
 }
 
-// prepareTestMultiProvider creates a MultiProvider with fake providers and config
-func prepareTestMultiProvider(providers map[string]Provider, chainMap map[string]string) *MultiProvider {
-	config.AppConfig.Providers.RequestTimeout = 3
-	config.AppConfig.Providers.ChainProviders = chainMap
+// prepareTestMultiProvider sets the current configuration and returns a MultiProvider
+func prepareTestMultiProvider(providers map[string]Provider, chainMap map[string]string, timeout int64) *MultiProvider {
+	cfg := types.Config{
+		Providers: types.ProvidersConfig{
+			RequestTimeout: timeout,
+			ChainProviders: chainMap,
+		},
+	}
+	// Set it manually since we're not reading from files
+	configForTest(cfg)
+
 	return NewMultiProvider(providers)
+}
+
+// configForTest manually injects configuration for tests
+func configForTest(cfg types.Config) {
+	_ = os.Setenv("APP_ENV", "test")      // avoid loading remote config
+	config.Init(&types.BootstrapConfig{}) // Init will override with defaults
+	// overwrite with test config
+	val := config.Current()
+	val.Providers = cfg.Providers
+	// simulate hot-reload behavior
+	cfg = val
+	// manually push test config
+	configOverride(cfg)
+}
+
+func configOverride(cfg types.Config) {
+	config.SetCurrentConfig(cfg)
 }
 
 func TestMultiProvider_AllSuccess(t *testing.T) {
@@ -56,7 +81,7 @@ func TestMultiProvider_AllSuccess(t *testing.T) {
 		"bsc": "p2",
 	}
 
-	mp := prepareTestMultiProvider(providerMap, chainMap)
+	mp := prepareTestMultiProvider(providerMap, chainMap, 3)
 
 	params := &types.TransactionQueryParams{
 		ChainNames: []string{"eth", "bsc"},
@@ -81,6 +106,7 @@ func TestMultiProvider_SomeFail(t *testing.T) {
 	mp := prepareTestMultiProvider(
 		map[string]Provider{"p1": p1, "p2": p2},
 		map[string]string{"eth": "p1", "bsc": "p2"},
+		3,
 	)
 
 	params := &types.TransactionQueryParams{ChainNames: []string{"eth", "bsc"}}
@@ -103,6 +129,7 @@ func TestMultiProvider_AllFail(t *testing.T) {
 	mp := prepareTestMultiProvider(
 		map[string]Provider{"p1": p1, "p2": p2},
 		map[string]string{"eth": "p1", "bsc": "p2"},
+		3,
 	)
 
 	params := &types.TransactionQueryParams{ChainNames: []string{"eth", "bsc"}}
@@ -113,22 +140,20 @@ func TestMultiProvider_AllFail(t *testing.T) {
 }
 
 func TestMultiProvider_DelayedButWithinTimeout(t *testing.T) {
-	config.AppConfig.Providers.RequestTimeout = 3 // 3 seconds timeout
-
 	p1 := &mockProvider{
 		transactions: []types.Transaction{{Hash: "0xdelayed"}},
-		delay:        2 * time.Second, // still within timeout
+		delay:        2 * time.Second,
 	}
 
 	mp := prepareTestMultiProvider(
 		map[string]Provider{"p1": p1},
 		map[string]string{"eth": "p1"},
+		3,
 	)
 
 	params := &types.TransactionQueryParams{ChainNames: []string{"eth"}}
 	resp, err := mp.GetTransactions(params)
 
-	// ✅ Expect success
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Len(t, resp.Result.Transactions, 1)
