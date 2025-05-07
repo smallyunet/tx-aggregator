@@ -51,8 +51,10 @@ type BlockscoutConfig struct {
 
 // LogConfig holds logging level.
 type LogConfig struct {
-	Level int8   `mapstructure:"level"`
-	Path  string `mapstructure:"path"`
+	Level         int8   `mapstructure:"level"`
+	Path          string `mapstructure:"path"`
+	ConsoleFormat string `mapstructure:"console_format"`
+	FileFormat    string `mapstructure:"file_format"`
 }
 
 // ResponseConfig limits response size.

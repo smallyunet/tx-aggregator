@@ -49,7 +49,7 @@ func main() {
 	config.Init(bootstrapCfg)
 
 	// 3. Init logger (after config)
-	logger.Init(config.Current().Log.Level, config.Current().Log.Path)
+	logger.Init(config.Current().Log.Level, config.Current().Log.Path, config.Current().Log.ConsoleFormat, config.Current().Log.FileFormat)
 
 	// 4. Setup Consul client
 	logger.Log.Info().Str("consul.address", bootstrapCfg.Consul.Address).Msg("Creating Consul API client")
