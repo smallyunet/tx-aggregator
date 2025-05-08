@@ -78,51 +78,33 @@ func FilterTransactionsByChainNames(resp *types.TransactionResponse, chainNames 
 	return resp
 }
 
-// SortTransactionResponseByHeightAndIndex sorts transactions by block height, txIndex,
-// nonce (for same fromAddress), and hash as the final tiebreaker.
+// Deterministic version: adds FromAddress and keeps stability.
 func SortTransactionResponseByHeightAndIndex(resp *types.TransactionResponse, ascending bool) {
 	if resp == nil || len(resp.Result.Transactions) == 0 {
 		return
 	}
 
-	sort.Slice(resp.Result.Transactions, func(i, j int) bool {
-		txI := resp.Result.Transactions[i]
-		txJ := resp.Result.Transactions[j]
+	sort.SliceStable(resp.Result.Transactions, func(i, j int) bool {
+		txI, txJ := resp.Result.Transactions[i], resp.Result.Transactions[j]
 
-		// 1. Sort by block height
 		if txI.Height != txJ.Height {
-			if ascending {
-				return txI.Height < txJ.Height
-			}
-			return txI.Height > txJ.Height
+			return ascending == (txI.Height < txJ.Height)
 		}
-
-		// 2. Sort by txIndex
 		if txI.TxIndex != txJ.TxIndex {
-			if ascending {
-				return txI.TxIndex < txJ.TxIndex
-			}
-			return txI.TxIndex > txJ.TxIndex
+			return ascending == (txI.TxIndex < txJ.TxIndex)
 		}
-
-		// 3. Sort by nonce (only meaningful if fromAddress is the same)
 		if txI.FromAddress == txJ.FromAddress {
-			nonceI, errI := strconv.ParseUint(txI.Nonce, 10, 64)
-			nonceJ, errJ := strconv.ParseUint(txJ.Nonce, 10, 64)
-
-			if errI == nil && errJ == nil && nonceI != nonceJ {
-				if ascending {
-					return nonceI < nonceJ
+			if nI, errI := strconv.ParseUint(txI.Nonce, 10, 64); errI == nil {
+				if nJ, errJ := strconv.ParseUint(txJ.Nonce, 10, 64); errJ == nil && nI != nJ {
+					return ascending == (nI < nJ)
 				}
-				return nonceI > nonceJ
 			}
 		}
-
-		// 4. Tiebreaker: sort by hash lexicographically
-		if ascending {
-			return txI.Hash < txJ.Hash
+		if txI.Hash != txJ.Hash {
+			return ascending == (txI.Hash < txJ.Hash)
 		}
-		return txI.Hash > txJ.Hash
+		// Final fallback to FromAddress for deterministic order
+		return ascending == (txI.FromAddress < txJ.FromAddress)
 	})
 }
 

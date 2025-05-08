@@ -70,14 +70,15 @@ func (p *BlockscanProvider) GetTransactions(params *types.TransactionQueryParams
 	})
 
 	// 3. Internal transactions (txlistinternal)
-	g.Go(func() error {
-		resp, err := p.fetchInternalTx(address)
-		if err != nil {
-			return err
-		}
-		internalTxs = p.transformInternalTx(resp, address)
-		return nil
-	})
+	// TODO: temporarily disabled due to API issues
+	//g.Go(func() error {
+	//	resp, err := p.fetchInternalTx(address)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	internalTxs = p.transformInternalTx(resp, address)
+	//	return nil
+	//})
 
 	// Wait for all three API calls
 	if err := g.Wait(); err != nil {
@@ -90,7 +91,7 @@ func (p *BlockscanProvider) GetTransactions(params *types.TransactionQueryParams
 
 	all := append(normalTxs, tokenTxs...)
 	all = append(all, internalTxs...)
-	
+
 	logger.Log.Info().
 		Str("provider", p.cfg.ChainName).
 		Int("normal", len(normalTxs)).
