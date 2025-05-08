@@ -59,7 +59,8 @@ type LogConfig struct {
 
 // ResponseConfig limits response size.
 type ResponseConfig struct {
-	Max int `mapstructure:"max"`
+	Max       int  `mapstructure:"max"`
+	Ascending bool `mapstructure:"ascending"` // Default is false
 }
 
 // BlockscanConfig holds per-chain settings for BscScan / Etherscan style APIs.

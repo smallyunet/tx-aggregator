@@ -1,17 +1,24 @@
 # config.yaml
-# v1.4.7
+# Version: v1.4.7
 
+# ------------------------------
 # Server configuration
+# ------------------------------
 server:
   port: 8080  # Port number for the application server
 
-# Redis cluster configuration
+# ------------------------------
+# Redis configuration (single-node or cluster)
+# ------------------------------
 redis:
-  addrs:  # List of Redis server addresses
+  addrs:        # List of Redis server addresses
     - tantin-test-address-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com:6379
   password: ""  # Redis authentication password (empty for no password)
-  ttl: 60  # Time-to-live for cached data in seconds
+  ttl: 60       # Time-to-live for cached data in seconds
 
+# ------------------------------
+# Data provider configuration
+# ------------------------------
 providers:
   request_timeout: 60
   chain_providers:
