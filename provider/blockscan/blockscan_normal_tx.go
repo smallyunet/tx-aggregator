@@ -14,7 +14,7 @@ func (p *BlockscanProvider) fetchNormalTx(addr string) (*types.BlockscanNormalTx
 		"module":     {"account"},
 		"action":     {"txlist"},
 		"address":    {addr},
-		"startblock": {"0"},
+		"startblock": {"45000000"},
 		"endblock":   {"9999999999"},
 		"page":       {"1"},
 		"offset":     {fmt.Sprint(p.cfg.RequestPageSize)},

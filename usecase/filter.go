@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 	"tx-aggregator/types"
 	"tx-aggregator/utils"
@@ -77,8 +78,8 @@ func FilterTransactionsByChainNames(resp *types.TransactionResponse, chainNames 
 	return resp
 }
 
-// SortTransactionResponseByHeightAndIndex sorts transactions by block height and txIndex.
-// If heights are the same, it sorts by txIndex in ascending order.
+// SortTransactionResponseByHeightAndIndex sorts transactions by block height, txIndex,
+// nonce (for same fromAddress), and hash as the final tiebreaker.
 func SortTransactionResponseByHeightAndIndex(resp *types.TransactionResponse, ascending bool) {
 	if resp == nil || len(resp.Result.Transactions) == 0 {
 		return
@@ -88,17 +89,40 @@ func SortTransactionResponseByHeightAndIndex(resp *types.TransactionResponse, as
 		txI := resp.Result.Transactions[i]
 		txJ := resp.Result.Transactions[j]
 
-		if txI.Height == txJ.Height {
+		// 1. Sort by block height
+		if txI.Height != txJ.Height {
+			if ascending {
+				return txI.Height < txJ.Height
+			}
+			return txI.Height > txJ.Height
+		}
+
+		// 2. Sort by txIndex
+		if txI.TxIndex != txJ.TxIndex {
 			if ascending {
 				return txI.TxIndex < txJ.TxIndex
 			}
 			return txI.TxIndex > txJ.TxIndex
 		}
 
-		if ascending {
-			return txI.Height < txJ.Height
+		// 3. Sort by nonce (only meaningful if fromAddress is the same)
+		if txI.FromAddress == txJ.FromAddress {
+			nonceI, errI := strconv.ParseUint(txI.Nonce, 10, 64)
+			nonceJ, errJ := strconv.ParseUint(txJ.Nonce, 10, 64)
+
+			if errI == nil && errJ == nil && nonceI != nonceJ {
+				if ascending {
+					return nonceI < nonceJ
+				}
+				return nonceI > nonceJ
+			}
 		}
-		return txI.Height > txJ.Height
+
+		// 4. Tiebreaker: sort by hash lexicographically
+		if ascending {
+			return txI.Hash < txJ.Hash
+		}
+		return txI.Hash > txJ.Hash
 	})
 }
 

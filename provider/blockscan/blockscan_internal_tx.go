@@ -13,7 +13,7 @@ func (p *BlockscanProvider) fetchInternalTx(addr string) (*types.BlockscanIntern
 		"module":     {"account"},
 		"action":     {"txlistinternal"},
 		"address":    {addr},
-		"startblock": {"0"},
+		"startblock": {"45000000"},
 		"endblock":   {"9999999999"},
 		"page":       {"1"},
 		"offset":     {fmt.Sprint(p.cfg.RequestPageSize)},
