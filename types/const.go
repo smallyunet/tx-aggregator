@@ -10,6 +10,8 @@ const (
 	CoinTypeNative = 1
 	// CoinTypeToken represents ERC20/ERC721 tokens
 	CoinTypeToken = 2
+	// CoinTypeInternal represents internal transactions (e.g., contract interactions)
+	CoinTypeInternal = 3
 
 	// NativeTokenName is the name for native tokens
 	NativeTokenName = "native"

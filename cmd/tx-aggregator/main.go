@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 	"tx-aggregator/consul"
+	"tx-aggregator/provider/blockscan"
 	"tx-aggregator/types"
 	"tx-aggregator/usecase"
 
@@ -79,6 +80,7 @@ func main() {
 	registry["ankr"] = ankr.NewAnkrProvider(config.Current().Ankr.APIKey, config.Current().Ankr.URL)
 	logger.Log.Info().Msg("Ankr provider registered")
 
+	// Register blockscout providers
 	for _, bs := range config.Current().Blockscout {
 		chainID, err := utils.ChainIDByName(bs.ChainName)
 		if err != nil {
@@ -88,6 +90,18 @@ func main() {
 		key := fmt.Sprintf("blockscout_%s", strings.ToLower(bs.ChainName))
 		registry[key] = blockscout.NewBlockscoutProvider(chainID, bs)
 		logger.Log.Info().Str("provider", key).Str("url", bs.URL).Msg("Blockscout provider registered")
+	}
+
+	// Register blockscan providers
+	for _, bs := range config.Current().Blockscan {
+		chainID, err := utils.ChainIDByName(bs.ChainName)
+		if err != nil {
+			logger.Log.Warn().Str("chain", bs.ChainName).Msg("Invalid chain name, skipping Blockscan")
+			continue
+		}
+		key := fmt.Sprintf("blockscan_%s", strings.ToLower(bs.ChainName))
+		registry[key] = blockscan.NewBlockscanProvider(chainID, bs)
+		logger.Log.Info().Str("provider", key).Str("url", bs.URL).Msg("Blockscan provider registered")
 	}
 
 	multiProvider := provider.NewMultiProvider(registry)

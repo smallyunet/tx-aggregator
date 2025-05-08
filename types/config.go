@@ -11,6 +11,7 @@ type Config struct {
 	Response     ResponseConfig     `mapstructure:"response"`
 	ChainNames   map[string]int64   `mapstructure:"chain_names"`
 	NativeTokens map[string]string  `mapstructure:"native_tokens"`
+	Blockscan    []BlockscanConfig  `mapstructure:"blockscan"`
 }
 
 // ServerConfig holds server-related configuration.
@@ -59,4 +60,12 @@ type LogConfig struct {
 // ResponseConfig limits response size.
 type ResponseConfig struct {
 	Max int `mapstructure:"max"`
+}
+
+// BlockscanConfig holds per-chain settings for BscScan / Etherscan style APIs.
+type BlockscanConfig struct {
+	URL             string `mapstructure:"url"`               // e.g. https://api-testnet.bscscan.com/api
+	APIKey          string `mapstructure:"api_key"`           // personal API key
+	ChainName       string `mapstructure:"chain_name"`        // BSC, ETH, etc. – used in YAML mapping
+	RequestPageSize int    `mapstructure:"request_page_size"` // Max items per page (100 is typical)
 }

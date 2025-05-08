@@ -12,6 +12,7 @@ redis:
   password: ""  # Redis authentication password (empty for no password)
   ttl: 60  # Time-to-live for cached data in seconds
 
+# Providers configuration
 providers:
   request_timeout: 60
   chain_providers:
@@ -19,11 +20,13 @@ providers:
     BSC: ankr
     POL: ankr
     BASE: ankr
+    TTX: blockscout_ttx
     HoleskyETH: ankr
     SepoliaETH: ankr
     AmoyPOL: ankr
     BaseSepoliaETH: ankr
-    TTX: blockscout_ttx
+    TestnetBSC: blockscan_testnetbsc
+    TestnetTTX: blockscout_testnetttx
 
 # Ankr API configuration for blockchain data
 ankr:
@@ -47,6 +50,18 @@ blockscout:
     request_page_size: 100
     rpc_url: https://rpc.tantin.com
     rpc_request_timeout: 90
+  - url: http://testscan.tantin.com/api/v2/
+    chain_name: TestnetTTX
+    request_page_size: 100
+    rpc_url: https://testrpc.tantin.com
+    rpc_request_timeout: 90
+
+# Blockscan providers for TestnetBSC
+blockscan:
+  - url: https://api-testnet.bscscan.com/api
+    api_key: QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+    chain_name: TestnetBSC
+    request_page_size: 100
 
 # Logging configuration
 log:
@@ -70,6 +85,8 @@ chain_names:
   SepoliaETH: 11155111
   AmoyPOL: 80002
   BaseSepoliaETH: 84532
+  TestnetBSC: 97
+  TestnetTTX: 12302
 
 # Native token name mapping by chain ID
 native_tokens:
@@ -82,3 +99,6 @@ native_tokens:
   "11155111": SepoliaETH
   "80002": POL
   "84532": ETH
+  "97": BNB
+  "12302": CTC
+
