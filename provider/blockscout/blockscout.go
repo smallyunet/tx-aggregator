@@ -44,6 +44,7 @@ func (p *BlockscoutProvider) GetTransactions(params *types.TransactionQueryParam
 
 	logger.Log.Info().
 		Str("chain", p.config.ChainName).
+		Strs("params_chainNames", params.ChainNames).
 		Str("address", address).
 		Msg("Fetching transactions from Blockscout")
 

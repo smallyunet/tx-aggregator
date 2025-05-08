@@ -1,15 +1,16 @@
 // File: main.go
 //
-// A simple integration‑test runner that executes the same set of HTTP test
-// cases against one or more deployment environments (local, test, prod).
-// The test‑case file contains only the request path + query string, so the
-// correct domain is injected at runtime based on the selected environment.
+// A simple integration-test runner that executes the same set of HTTP test
+// cases against one or more deployment environments (local, test, prod …).
+// The test-case file may contain either relative paths or full URLs that start
+// with the local base URL (e.g. http://127.0.0.1:8080/…); the scheme/host are
+// discarded automatically.
 //
 // Usage examples:
 //
-//	go run main.go                    # default: env=local
-//	go run main.go -env=test          # run only test environment
-//	go run main.go -env=all           # run local + test + prod
+//	go run main.go                  # default: env=local
+//	go run main.go -env=test        # run only “test”
+//	go run main.go -env=all         # run all environments in envHosts
 //
 // Exit status 0  – all environments passed
 // Exit status 1+ – at least one environment failed
@@ -22,30 +23,33 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// ---- command‑line flags -----------------------------------------------------
+// ---------------------------------------------------------------------------
+// Command-line flags
 
-// envFlag chooses which environment(s) to test: local | test | prod | all
-var envFlag = flag.String("env", "local", "environment to run (local|test|prod|all)")
+var envFlag = flag.String("env", "local",
+	"environment to run (value must exist in envHosts or ‘all’)")
 
-// ---- environment configuration ---------------------------------------------
+// ---------------------------------------------------------------------------
+// Environment configuration
 
-// envHosts maps environment names to their base URLs.
-// Only the hostname / port differs between environments; all paths stay the same.
+// Only scheme / host(/port) / optional prefix differ between environments.
 var envHosts = map[string]string{
-	"local":   "http://127.0.0.1:8080",
-	"test":    "http://nlb.devops.tantin.com:8000/api/tx-aggregator",
-	"prod":    "https://wallet-api.tantin.com/api/tx-aggregator",
-	"prod-in": "http://tx-aggregator.service.consul:8050",
+	"local": "http://127.0.0.1:8080",
+	"test":  "http://nlb.devops.tantin.com:8000/api/tx-aggregator",
+	"prod":  "http://tx-aggregator.service.consul:8050",
 }
 
-// ---- entry point ------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Entry point
 
 func main() {
 	flag.Parse()
@@ -57,15 +61,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Resolve which environments to run
-	var envs []string
-	switch *envFlag {
-	case "all":
-		envs = []string{"local", "test", "prod"}
-	case "local", "test", "prod":
-		envs = []string{*envFlag}
-	default:
-		fmt.Printf("Unknown env %q (valid: local|test|prod|all)\n", *envFlag)
+	envs, err := resolveEnvs(*envFlag)
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
@@ -80,13 +78,33 @@ func main() {
 	os.Exit(exitCode)
 }
 
-// runSuite executes all test cases against a single environment.
-// Returns true if all tests passed.
+// resolveEnvs validates the flag value and returns the list of env names.
+func resolveEnvs(flagValue string) ([]string, error) {
+	if flagValue == "all" {
+		// Collect every key from envHosts deterministically (lexicographic).
+		keys := make([]string, 0, len(envHosts))
+		for k := range envHosts {
+			keys = append(keys, k)
+		}
+		sortStrings(keys)
+		return keys, nil
+	}
+	if _, ok := envHosts[flagValue]; ok {
+		return []string{flagValue}, nil
+	}
+	return nil, fmt.Errorf("unknown env %q (valid values: %s or ‘all’)",
+		flagValue, strings.Join(sortedEnvKeys(), "|"))
+}
+
+// ---------------------------------------------------------------------------
+// Test-suite execution
+
 func runSuite(baseURL string, paths []string) bool {
 	passed := 0
+	base, _ := url.Parse(baseURL)
 
 	for idx, p := range paths {
-		fullURL := baseURL + p
+		fullURL := buildFullURL(base, p)
 		fmt.Printf("Test #%d: %s\n", idx+1, fullURL)
 
 		firstResp, err := doRequest(fullURL)
@@ -95,7 +113,7 @@ func runSuite(baseURL string, paths []string) bool {
 			continue
 		}
 
-		// small delay to give cache / rate‑limit logic a chance to differ
+		// Small delay to let cache / rate-limit logic diverge if it would.
 		time.Sleep(500 * time.Millisecond)
 
 		secondResp, err := doRequest(fullURL)
@@ -105,7 +123,7 @@ func runSuite(baseURL string, paths []string) bool {
 		}
 
 		if assert.ObjectsAreEqual(firstResp, secondResp) {
-			fmt.Println("✅ PASS")
+			fmt.Printf("✅ PASS (items: %d)\n", extractCount(firstResp))
 			passed++
 		} else {
 			fmt.Println("❌ FAIL: response mismatch")
@@ -117,10 +135,20 @@ func runSuite(baseURL string, paths []string) bool {
 	return passed == len(paths)
 }
 
-// ---- helpers ----------------------------------------------------------------
+// buildFullURL merges baseURL with requestURI produced by loadTestCases.
+func buildFullURL(base *url.URL, requestURI string) string {
+	u, _ := url.Parse(requestURI) // requestURI is always absolute-path+query
+	out := *base                  // copy
+	out.Path = path.Join(base.Path, u.Path)
+	out.RawQuery = u.RawQuery
+	return out.String()
+}
 
-// loadTestCases reads the .txt file and returns a slice of request paths.
-// Lines beginning with “#” or blank lines are ignored.
+// ---------------------------------------------------------------------------
+// Helpers
+
+// loadTestCases reads the .txt file and returns a slice of request URIs
+// (leading “/…?query”, no scheme/host), ignoring blank and comment lines.
 func loadTestCases(path string) ([]string, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -136,13 +164,13 @@ func loadTestCases(path string) ([]string, error) {
 			continue
 		}
 
-		// Accept either full URLs or relative paths; convert full URLs to paths.
+		// Accept either full URLs or relative paths; convert full URLs to URI.
 		if strings.HasPrefix(line, "http://") || strings.HasPrefix(line, "https://") {
-			u, err := http.NewRequest(http.MethodGet, line, nil)
+			req, err := http.NewRequest(http.MethodGet, line, nil)
 			if err != nil {
 				return nil, fmt.Errorf("invalid URL in test file: %s", line)
 			}
-			line = u.URL.RequestURI()
+			line = req.URL.RequestURI()
 		}
 
 		list = append(list, line)
@@ -170,7 +198,33 @@ func doRequest(url string) (map[string]interface{}, error) {
 	return payload, nil
 }
 
-// printResponseDiff outputs the key‑wise differences between two JSON objects.
+// extractCount returns the number of transactions inside result.transactions.
+func extractCount(m map[string]interface{}) int {
+	result, ok := m["result"]
+	if !ok {
+		return 0
+	}
+
+	// Assert `result` is a map
+	resultMap, ok := result.(map[string]interface{})
+	if !ok {
+		return 0
+	}
+
+	// Get `transactions` field
+	txs, ok := resultMap["transactions"]
+	if !ok {
+		return 0
+	}
+
+	// Check if it's a slice
+	if txSlice, ok := txs.([]interface{}); ok {
+		return len(txSlice)
+	}
+	return 0
+}
+
+// printResponseDiff outputs the keywise differences between two JSON objects.
 func printResponseDiff(first, second map[string]interface{}) {
 	fmt.Println("--- Differences between first and second response ---")
 
@@ -188,6 +242,28 @@ func printResponseDiff(first, second map[string]interface{}) {
 	for key := range second {
 		if _, exists := first[key]; !exists {
 			fmt.Printf("Key '%s' missing in first response (second = %v)\n", key, second[key])
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Small utility helpers
+
+func sortedEnvKeys() []string {
+	keys := make([]string, 0, len(envHosts))
+	for k := range envHosts {
+		keys = append(keys, k)
+	}
+	sortStrings(keys)
+	return keys
+}
+
+func sortStrings(s []string) { // small inline sorter to avoid pulling in sort pkg
+	for i := 0; i < len(s)-1; i++ {
+		for j := i + 1; j < len(s); j++ {
+			if s[j] < s[i] {
+				s[i], s[j] = s[j], s[i]
+			}
 		}
 	}
 }

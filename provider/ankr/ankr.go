@@ -38,6 +38,7 @@ func (a *AnkrProvider) GetTransactions(params *types.TransactionQueryParams) (*t
 
 	logger.Log.Info().
 		Str("address", address).
+		Strs("params_chainnames", params.ChainNames).
 		Msg("Starting to fetch all transactions for address")
 
 	var (

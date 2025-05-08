@@ -19,22 +19,25 @@ providers:
     BSC: ankr
     POL: ankr
     BASE: ankr
+    HoleskyETH: ankr
+    SepoliaETH: ankr
+    AmoyPOL: ankr
+    BaseSepoliaETH: ankr
     TTX: blockscout_ttx
 
 # Ankr API configuration for blockchain data
 ankr:
   api_key: 15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65  # Ankr API key for authentication
   url: https://rpc.ankr.com/multichain  # Ankr RPC endpoint URL
-  request_blockchains:  # List of supported blockchain networks
-    - eth
-    - bsc
-    - polygon
-    - base
   chain_ids:
     eth: 1
     bsc: 56
     polygon: 137
     base : 8453
+    eth_holesky: 17000
+    eth_sepolia: 11155111
+    polygon_amoy: 80002
+    base_sepolia: 84532
   request_page_size: 100  # Number of records per API request
 
 # Blockscout providers (multiple chain support)
@@ -58,11 +61,15 @@ response:
 
 # Chain ID mapping for different blockchain networks
 chain_names:
-  ETH: 1        # Ethereum mainnet
-  BSC: 56       # Binance Smart Chain
-  POL: 137      # Polygon (Matic)
-  BASE: 8453    # Base Mainnet
-  TTX: 12301   # Tantin chain ID
+  ETH: 1
+  BSC: 56
+  POL: 137
+  BASE: 8453
+  TTX: 12301
+  HoleskyETH: 17000
+  SepoliaETH: 11155111
+  AmoyPOL: 80002
+  BaseSepoliaETH: 84532
 
 # Native token name mapping by chain ID
 native_tokens:
@@ -71,3 +78,7 @@ native_tokens:
   "137": POL
   "8453": ETH
   "12301": CTC
+  "17000": HoleskyETH
+  "11155111": SepoliaETH
+  "80002": POL
+  "84532": ETH

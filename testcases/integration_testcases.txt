@@ -1,43 +1,69 @@
-# --- Query only by address (no additional parameters) ---
+# ------------------------------------------------------------------
+# 🧪 Query: Only address (no chainName or tokenAddress)
+# ------------------------------------------------------------------
 
-/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
-/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705a814D
-/transactions?address=0xa619cc6E0A90da0521c00289Ba180E32d021Ee0E
-/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD
-/transactions?address=0x7d095e6307B57117040F269bd8f1AAD00dF599E2
-/transactions?address=0xb6cEF76BD998f157434d93A791603D38c6e41f85
+http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
+http://127.0.0.1:8080/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705a814D
+http://127.0.0.1:8080/transactions?address=0xa619cc6E0A90da0521c00289Ba180E32d021Ee0E
+http://127.0.0.1:8080/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD
+http://127.0.0.1:8080/transactions?address=0x7d095e6307B57117040F269bd8f1AAD00dF599E2
+http://127.0.0.1:8080/transactions?address=0xb6cEF76BD998f157434d93A791603D38c6e41f85
 
-
-# --- Query by address + chainName ---
-
-# Invalid chainName (polygon)
-/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=polygon
-
-# Valid chainName (POL, BASE, eth)
-/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=POL
-/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=BASE
-/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD&chainName=eth
-/transactions?address=0x6384075bb3C2a3D0EAa98c1f0139b55d8D23b90f&chainname=bsc
-/transactions?address=0xCD51FB298c83Dd81275d87893EF721A1c698814D&chainname=ttx
+# Testnet addresses
+http://127.0.0.1:8080/transactions?address=0x4494b11078A8Ef89a3EFdA49351cC9c610C225de
+http://127.0.0.1:8080/transactions?address=0x4595a3AD508Adf916ab082D0438515b190f41C84
 
 
-# --- Query by address + tokenAddress ---
+# ------------------------------------------------------------------
+# 🧪 Query: address + chainName
+# ------------------------------------------------------------------
 
-/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&tokenAddress=0x8290333cef9e6d528dd5618fb97a76f268f3edd4
-/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&tokenAddress=0xdac17f958d2ee523a2206206994597c13d831ec7
-/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705a814D&tokenAddress=0x0000000000000000000000000000000000002005
+# Invalid chainName
+http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=polygon
+
+# Mainnets
+http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=POL
+http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&chainName=BASE
+http://127.0.0.1:8080/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD&chainName=eth
+http://127.0.0.1:8080/transactions?address=0x6384075bb3C2a3D0EAa98c1f0139b55d8D23b90f&chainName=bsc
+http://127.0.0.1:8080/transactions?address=0xCD51FB298c83Dd81275d87893EF721A1c698814D&chainName=ttx
+
+# Testnets
+http://127.0.0.1:8080/transactions?address=0x4494b11078A8Ef89a3EFdA49351cC9c610C225de&chainName=HoleskyETH
+http://127.0.0.1:8080/transactions?address=0x4494b11078A8Ef89a3EFdA49351cC9c610C225de&chainName=SepoliaETH
+http://127.0.0.1:8080/transactions?address=0x4494b11078A8Ef89a3EFdA49351cC9c610C225de&chainName=AmoyPOL
+http://127.0.0.1:8080/transactions?address=0x4494b11078A8Ef89a3EFdA49351cC9c610C225de&chainName=BaseSepoliaETH
+http://127.0.0.1:8080/transactions?address=0x4595a3AD508Adf916ab082D0438515b190f41C84&chainName=AmoyPOL
 
 
-# --- Query by address + tokenAddress=native ---
+# ------------------------------------------------------------------
+# 🧪 Query: address + tokenAddress
+# ------------------------------------------------------------------
 
-/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&tokenAddress=native
-/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705a814D&tokenAddress=native
+http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&tokenAddress=0x8290333cef9e6d528dd5618fb97a76f268f3edd4
+http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&tokenAddress=0xdac17f958d2ee523a2206206994597c13d831ec7
+http://127.0.0.1:8080/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705a814D&tokenAddress=0x0000000000000000000000000000000000002005
 
-# --- Query by address + chainName + tokenAddress=native ---
-/transactions?address=0x1CC0DbBae7C658c7def0fF883C8fcf4370153C1F&chainname=bsc&tokenAddress=native
-/transactions?address=0xAd3F1Fd00F5E85A24a69EB61Fa34D50e0Aab1b57&chainname=bsc&tokenAddress=native
 
-# --- Query by address + chainName + tokenAddress ---
+# ------------------------------------------------------------------
+# 🧪 Query: address + tokenAddress=native
+# ------------------------------------------------------------------
 
-/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD&tokenAddress=0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60&chainName=eth
-/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD&tokenAddress=0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4&chainName=base
+http://127.0.0.1:8080/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D&tokenAddress=native
+http://127.0.0.1:8080/transactions?address=0x472e93D8Ba72345cfCE0800eE24A8f69705a814D&tokenAddress=native
+
+
+# ------------------------------------------------------------------
+# 🧪 Query: address + chainName + tokenAddress=native
+# ------------------------------------------------------------------
+
+http://127.0.0.1:8080/transactions?address=0x1CC0DbBae7C658c7def0fF883C8fcf4370153C1F&chainName=bsc&tokenAddress=native
+http://127.0.0.1:8080/transactions?address=0xAd3F1Fd00F5E85A24a69EB61Fa34D50e0Aab1b57&chainName=bsc&tokenAddress=native
+
+
+# ------------------------------------------------------------------
+# 🧪 Query: address + chainName + tokenAddress
+# ------------------------------------------------------------------
+
+http://127.0.0.1:8080/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD&chainName=eth&tokenAddress=0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60
+http://127.0.0.1:8080/transactions?address=0x42fADa639eA626214adE4a88aaC445FDBCA4FACD&chainName=base&tokenAddress=0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4

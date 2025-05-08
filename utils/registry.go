@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"tx-aggregator/config"
 )
@@ -52,36 +53,46 @@ func AnkrChainNameByID(id int64) (string, error) {
 	return "", fmt.Errorf("unknown chain ID: %d", id)
 }
 
-// ResolveAnkrBlockchains converts user–supplied chain names to the lowercase
-// identifiers required by the Ankr API.
+// ResolveAnkrBlockchains converts UI-supplied chain names into the lowercase
+// identifiers expected by the Ankr Multichain API.
 //
-// Behaviour change:
-//   - Any unknown or unsupported chain name is *ignored* instead of causing
-//     an error.
-//   - If, after filtering, the list is empty, the function falls back to
-//     AppConfig.Ankr.RequestBlockchains so that the caller still gets a
-//     valid slice.
+// Behaviour
+// • Empty input → return all chains supported by Ankr (derived from
+// cfg.Ankr.ChainIDs).
+// • Unknown chain names, or chain names not supported by Ankr, are skipped.
+// • If filtering leaves the slice empty, fall back to the full supported set.
 //
-// Example
+// Example:
 //
-//	paramNames = []string{"ETH", "FOO", "BSC"}
-//	→ returns []string{"eth", "bsc"}
+// paramNames := []string{"ETH", "FOO", "BSC"}
+// // → []string{"eth", "bsc"}
 func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
-	// 1. No names supplied → use defaults immediately.
-	if len(paramNames) == 0 {
-		return config.Current().Ankr.RequestBlockchains, nil
+	cfg := config.Current()
+	// helper: return all supported chains (deduplicated, lowercase, sorted)
+	allSupported := func() []string {
+		out := make([]string, 0, len(cfg.Ankr.ChainIDs))
+		for name := range cfg.Ankr.ChainIDs {
+			out = append(out, strings.ToLower(name))
+		}
+		slices.Sort(out) // optional: ensures deterministic order
+		return out
 	}
 
-	// 2. Build reverse index: chain-ID → ankrName.
-	idToAnkr := make(map[int64]string, len(config.Current().Ankr.ChainIDs))
-	for ankrName, id := range config.Current().Ankr.ChainIDs {
+	// 1. No names provided → return full supported list.
+	if len(paramNames) == 0 {
+		return allSupported(), nil
+	}
+
+	// 2. Build reverse index: chainID → ankrName.
+	idToAnkr := make(map[int64]string, len(cfg.Ankr.ChainIDs))
+	for ankrName, id := range cfg.Ankr.ChainIDs {
 		idToAnkr[id] = ankrName
 	}
 
 	var blockchains []string
-	seen := make(map[string]struct{}) // de-duplication
+	seen := make(map[string]struct{}) // deduplication
 
-	// 3. Translate / filter.
+	// 3. Translate & filter.
 	for _, raw := range paramNames {
 		chainID, err := ChainIDByName(raw) // unknown UI name → skip
 		if err != nil {
@@ -98,10 +109,13 @@ func ResolveAnkrBlockchains(paramNames []string) ([]string, error) {
 		}
 	}
 
-	// 4. If everything was filtered out, revert to defaults.
+	// 4. Everything filtered out → return full supported list.
 	if len(blockchains) == 0 {
-		return config.Current().Ankr.RequestBlockchains, nil
+		return allSupported(), nil
 	}
+
+	// Optional: sort result for deterministic output
+	slices.Sort(blockchains)
 	return blockchains, nil
 }
 

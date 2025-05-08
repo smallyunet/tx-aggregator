@@ -33,11 +33,10 @@ type ProvidersConfig struct {
 
 // AnkrConfig holds Ankr provider settings.
 type AnkrConfig struct {
-	APIKey             string           `mapstructure:"api_key"`
-	URL                string           `mapstructure:"url"`
-	RequestBlockchains []string         `mapstructure:"request_blockchains"`
-	RequestPageSize    int              `mapstructure:"request_page_size"`
-	ChainIDs           map[string]int64 `mapstructure:"chain_ids"`
+	APIKey          string           `mapstructure:"api_key"`
+	URL             string           `mapstructure:"url"`
+	RequestPageSize int              `mapstructure:"request_page_size"`
+	ChainIDs        map[string]int64 `mapstructure:"chain_ids"`
 }
 
 // BlockscoutConfig represents a single Blockscout instance configuration.

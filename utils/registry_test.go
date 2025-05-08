@@ -16,6 +16,7 @@ func setupTestConfig() {
 		"ETH": 1,
 		"BSC": 56,
 		"op":  10,
+		"ARB": 42161,
 	}
 
 	cfg.Ankr = types.AnkrConfig{
@@ -24,7 +25,6 @@ func setupTestConfig() {
 			"AVAX": 43114,
 			"arb":  42161,
 		},
-		RequestBlockchains: []string{"eth", "avax"},
 	}
 
 	config.SetCurrentConfig(cfg)
@@ -136,6 +136,50 @@ func TestAnkrChainNameByID(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, name)
 			}
+		})
+	}
+}
+
+func TestResolveAnkrBlockchains(t *testing.T) {
+	setupTestConfig() // now includes "ARB": 42161 in ChainNames
+
+	// Convenience: full supported set derived from cfg.Ankr.ChainIDs
+	allSupported := []string{"arb", "avax", "eth"} // order irrelevant
+
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "empty input → all supported",
+			input:    nil,
+			expected: allSupported,
+		},
+		{
+			name:     "mixed valid / invalid names",
+			input:    []string{"ETH", "foo", "BSC"},
+			expected: []string{"eth"}, // BSC not in Ankr.ChainIDs
+		},
+		{
+			name:     "duplicates and different cases",
+			input:    []string{"ArB", "arb", "ARB"},
+			expected: []string{"arb"},
+		},
+		{
+			name:     "only unsupported names → fall back to all",
+			input:    []string{"foo", "bar"},
+			expected: allSupported,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc // capture range variable
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := utils.ResolveAnkrBlockchains(tc.input)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, tc.expected, got,
+				"input: %v expected: %v got: %v", tc.input, tc.expected, got)
 		})
 	}
 }

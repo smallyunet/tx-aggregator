@@ -19,12 +19,14 @@ func (p *AnkrProvider) GetTransactionsByAddress(params *types.TransactionQueryPa
 		logger.Log.Error().
 			Err(err).
 			Str("address", address).
+			Strs("params_chainNames", params.ChainNames).
 			Msg("invalid chainNames parameter")
 		return nil, err
 	}
 
 	logger.Log.Debug().
 		Str("address", address).
+		Strs("ankr_chainNames", blockchains).
 		Msg("Fetching normal transactions from Ankr")
 
 	requestBody := types.AnkrTransactionRequest{
