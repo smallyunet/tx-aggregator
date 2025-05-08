@@ -60,7 +60,7 @@ blockscout:
     request_page_size: 100
     rpc_url: https://rpc.tantin.com          # RPC node URL for on-chain queries
     rpc_request_timeout: 90                  # Timeout for RPC calls in seconds
-  - url: http://testscan.tantin.com/api/v2/  # API URL for testnet TTX
+  - url: http://testscan.tantin.com/api/v2   # API URL for testnet TTX
     chain_name: TestnetTTX
     request_page_size: 100
     rpc_url: https://testrpc.tantin.com
