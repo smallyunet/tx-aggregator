@@ -1,19 +1,3 @@
-// File: main.go
-//
-// A simple integration-test runner that executes the same set of HTTP test
-// cases against one or more deployment environments (local, test, prod …).
-// The test-case file may contain either relative paths or full URLs that start
-// with the local base URL (e.g. http://127.0.0.1:8080/…); the scheme/host are
-// discarded automatically.
-//
-// Usage examples:
-//
-//	go run main.go                  # default: env=local
-//	go run main.go -env=test        # run only “test”
-//	go run main.go -env=all         # run all environments in envHosts
-//
-// Exit status 0  – all environments passed
-// Exit status 1+ – at least one environment failed
 package main
 
 import (
@@ -26,22 +10,15 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// ---------------------------------------------------------------------------
-// Command-line flags
+var envFlag = flag.String("env", "local", "environment to run (value must exist in envHosts or 'all')")
 
-var envFlag = flag.String("env", "local",
-	"environment to run (value must exist in envHosts or ‘all’)")
-
-// ---------------------------------------------------------------------------
-// Environment configuration
-
-// Only scheme / host(/port) / optional prefix differ between environments.
 var envHosts = map[string]string{
 	"local":        "http://127.0.0.1:8080",
 	"local-docker": "http://127.0.0.1:8050",
@@ -50,8 +27,7 @@ var envHosts = map[string]string{
 	"prod":         "http://tx-aggregator.service.consul:8050",
 }
 
-// ---------------------------------------------------------------------------
-// Entry point
+const countsFile = "testcases/expected_counts.txt"
 
 func main() {
 	flag.Parse()
@@ -80,10 +56,8 @@ func main() {
 	os.Exit(exitCode)
 }
 
-// resolveEnvs validates the flag value and returns the list of env names.
 func resolveEnvs(flagValue string) ([]string, error) {
 	if flagValue == "all" {
-		// Collect every key from envHosts deterministically (lexicographic).
 		keys := make([]string, 0, len(envHosts))
 		for k := range envHosts {
 			keys = append(keys, k)
@@ -94,16 +68,14 @@ func resolveEnvs(flagValue string) ([]string, error) {
 	if _, ok := envHosts[flagValue]; ok {
 		return []string{flagValue}, nil
 	}
-	return nil, fmt.Errorf("unknown env %q (valid values: %s or ‘all’)",
-		flagValue, strings.Join(sortedEnvKeys(), "|"))
+	return nil, fmt.Errorf("unknown env %q (valid values: %s or 'all')", flagValue, strings.Join(sortedEnvKeys(), "|"))
 }
-
-// ---------------------------------------------------------------------------
-// Test-suite execution
 
 func runSuite(baseURL string, paths []string) bool {
 	passed := 0
 	base, _ := url.Parse(baseURL)
+	expectedCounts := loadExpectedCounts()
+	updatedCounts := make(map[string]int)
 
 	for idx, p := range paths {
 		fullURL := buildFullURL(base, p)
@@ -115,7 +87,6 @@ func runSuite(baseURL string, paths []string) bool {
 			continue
 		}
 
-		// Small delay to let cache / rate-limit logic diverge if it would.
 		time.Sleep(500 * time.Millisecond)
 
 		secondResp, err := doRequest(fullURL)
@@ -124,33 +95,38 @@ func runSuite(baseURL string, paths []string) bool {
 			continue
 		}
 
-		if assert.ObjectsAreEqual(firstResp, secondResp) {
-			fmt.Printf("✅ PASS (items: %d)\n", extractCount(firstResp))
+		count := extractCount(secondResp)
+		relURI := buildFullURL(base, p)[len(base.Scheme+"://"+base.Host):]
+		prevCount, exists := expectedCounts[relURI]
+
+		if !exists {
+			updatedCounts[relURI] = count
+			fmt.Printf("✅ PASS (items: %d) [initial record]\n", count)
 			passed++
-		} else {
+			continue
+		}
+
+		if count < prevCount {
+			fmt.Printf("❌ FAIL: item count dropped! current=%d, expected=%d\n", count, prevCount)
+			continue
+		}
+
+		if !assert.ObjectsAreEqual(firstResp, secondResp) {
 			fmt.Println("❌ FAIL: response mismatch")
 			printResponseDiff(firstResp, secondResp)
+			continue
 		}
+
+		updatedCounts[relURI] = count
+		fmt.Printf("✅ PASS (items: %d) [prev: %d]\n", count, prevCount)
+		passed++
 	}
 
+	saveExpectedCounts(updatedCounts)
 	fmt.Printf("Summary: %d / %d passed\n", passed, len(paths))
 	return passed == len(paths)
 }
 
-// buildFullURL merges baseURL with requestURI produced by loadTestCases.
-func buildFullURL(base *url.URL, requestURI string) string {
-	u, _ := url.Parse(requestURI) // requestURI is always absolute-path+query
-	out := *base                  // copy
-	out.Path = path.Join(base.Path, u.Path)
-	out.RawQuery = u.RawQuery
-	return out.String()
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-
-// loadTestCases reads the .txt file and returns a slice of request URIs
-// (leading “/…?query”, no scheme/host), ignoring blank and comment lines.
 func loadTestCases(path string) ([]string, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -165,8 +141,6 @@ func loadTestCases(path string) ([]string, error) {
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-
-		// Accept either full URLs or relative paths; convert full URLs to URI.
 		if strings.HasPrefix(line, "http://") || strings.HasPrefix(line, "https://") {
 			req, err := http.NewRequest(http.MethodGet, line, nil)
 			if err != nil {
@@ -174,13 +148,19 @@ func loadTestCases(path string) ([]string, error) {
 			}
 			line = req.URL.RequestURI()
 		}
-
 		list = append(list, line)
 	}
 	return list, scanner.Err()
 }
 
-// doRequest performs an HTTP GET and decodes the JSON body into a map.
+func buildFullURL(base *url.URL, requestURI string) string {
+	u, _ := url.Parse(requestURI)
+	out := *base
+	out.Path = path.Join(base.Path, u.Path)
+	out.RawQuery = u.RawQuery
+	return out.String()
+}
+
 func doRequest(url string) (map[string]interface{}, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -200,36 +180,27 @@ func doRequest(url string) (map[string]interface{}, error) {
 	return payload, nil
 }
 
-// extractCount returns the number of transactions inside result.transactions.
 func extractCount(m map[string]interface{}) int {
 	result, ok := m["result"]
 	if !ok {
 		return 0
 	}
-
-	// Assert `result` is a map
 	resultMap, ok := result.(map[string]interface{})
 	if !ok {
 		return 0
 	}
-
-	// Get `transactions` field
 	txs, ok := resultMap["transactions"]
 	if !ok {
 		return 0
 	}
-
-	// Check if it's a slice
 	if txSlice, ok := txs.([]interface{}); ok {
 		return len(txSlice)
 	}
 	return 0
 }
 
-// printResponseDiff outputs the keywise differences between two JSON objects.
 func printResponseDiff(first, second map[string]interface{}) {
 	fmt.Println("--- Differences between first and second response ---")
-
 	for key, firstVal := range first {
 		secondVal, exists := second[key]
 		if !exists {
@@ -240,7 +211,6 @@ func printResponseDiff(first, second map[string]interface{}) {
 			fmt.Printf("Key '%s' differs:\n  First:  %v\n  Second: %v\n", key, firstVal, secondVal)
 		}
 	}
-
 	for key := range second {
 		if _, exists := first[key]; !exists {
 			fmt.Printf("Key '%s' missing in first response (second = %v)\n", key, second[key])
@@ -248,8 +218,44 @@ func printResponseDiff(first, second map[string]interface{}) {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Small utility helpers
+func loadExpectedCounts() map[string]int {
+	data := make(map[string]int)
+	f, err := os.Open(countsFile)
+	if err != nil {
+		return data
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, " ", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		count, err := strconv.Atoi(parts[0])
+		if err != nil {
+			continue
+		}
+		data[parts[1]] = count
+	}
+	return data
+}
+
+func saveExpectedCounts(data map[string]int) {
+	f, err := os.Create(countsFile)
+	if err != nil {
+		fmt.Println("Failed to save counts:", err)
+		return
+	}
+	defer f.Close()
+	for uri, count := range data {
+		fmt.Fprintf(f, "%d %s\n", count, uri)
+	}
+}
 
 func sortedEnvKeys() []string {
 	keys := make([]string, 0, len(envHosts))
@@ -260,7 +266,7 @@ func sortedEnvKeys() []string {
 	return keys
 }
 
-func sortStrings(s []string) { // small inline sorter to avoid pulling in sort pkg
+func sortStrings(s []string) {
 	for i := 0; i < len(s)-1; i++ {
 		for j := i + 1; j < len(s); j++ {
 			if s[j] < s[i] {

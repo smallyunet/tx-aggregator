@@ -106,9 +106,9 @@ func (a *AnkrProvider) GetTransactions(params *types.TransactionQueryParams) (*t
 	}, nil
 }
 
-func (p *AnkrProvider) sendRequest(requestBody interface{}, result interface{}) error {
+func (p *AnkrProvider) sendRequest(requestBody interface{}, result interface{}, label string) error {
 	fullURL := fmt.Sprintf("%s/%s", p.url, p.apiKey)
-	return utils.DoHttpRequestWithLogging("POST", "ankr", fullURL, requestBody, map[string]string{
+	return utils.DoHttpRequestWithLogging("POST", "ankr."+label, fullURL, requestBody, map[string]string{
 		"Content-Type": "application/json",
 		"x-api-key":    p.apiKey,
 	}, result)

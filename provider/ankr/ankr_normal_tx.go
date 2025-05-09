@@ -1,6 +1,7 @@
 package ankr
 
 import (
+	"strconv"
 	"strings"
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
@@ -27,6 +28,9 @@ func (p *AnkrProvider) GetTransactionsByAddress(params *types.TransactionQueryPa
 	logger.Log.Debug().
 		Str("address", address).
 		Strs("ankr_chainNames", blockchains).
+		Str("include_logs", strconv.FormatBool(config.Current().Ankr.IncludeLogs)).
+		Str("desc_order", strconv.FormatBool(config.Current().Ankr.DescOrder)).
+		Int("page_size", config.Current().Ankr.RequestPageSize).
 		Msg("Fetching normal transactions from Ankr")
 
 	requestBody := types.AnkrTransactionRequest{
@@ -43,7 +47,7 @@ func (p *AnkrProvider) GetTransactionsByAddress(params *types.TransactionQueryPa
 	}
 
 	var result types.AnkrTransactionResponse
-	if err := p.sendRequest(requestBody, &result); err != nil {
+	if err := p.sendRequest(requestBody, &result, "normalTx"); err != nil {
 		logger.Log.Error().
 			Err(err).
 			Str("address", address).

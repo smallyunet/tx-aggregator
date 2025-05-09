@@ -1,6 +1,7 @@
 package ankr
 
 import (
+	"strconv"
 	"strings"
 	"tx-aggregator/config"
 	"tx-aggregator/logger"
@@ -27,6 +28,9 @@ func (p *AnkrProvider) GetTokenTransfers(params *types.TransactionQueryParams) (
 	logger.Log.Debug().
 		Str("address", address).
 		Strs("ankr_chainNames", blockchains).
+		Str("include_logs", strconv.FormatBool(config.Current().Ankr.IncludeLogs)).
+		Str("desc_order", strconv.FormatBool(config.Current().Ankr.DescOrder)).
+		Int("page_size", config.Current().Ankr.RequestPageSize).
 		Msg("Fetching token transfers from Ankr")
 
 	requestBody := types.AnkrTransactionRequest{
@@ -42,7 +46,7 @@ func (p *AnkrProvider) GetTokenTransfers(params *types.TransactionQueryParams) (
 	}
 
 	var result types.AnkrTokenTransferResponse
-	if err := p.sendRequest(requestBody, &result); err != nil {
+	if err := p.sendRequest(requestBody, &result, "tokenTx"); err != nil {
 		logger.Log.Error().
 			Err(err).
 			Str("address", address).

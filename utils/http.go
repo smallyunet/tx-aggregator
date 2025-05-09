@@ -32,6 +32,12 @@ func GetInsensitiveQuery(ctx *fiber.Ctx, key string) string {
 // headers:    optional headers (e.g., Content-Type, API keys)
 // result:     optional pointer to decode JSON response into (pass nil if not needed)
 func DoHttpRequestWithLogging(method, label, url string, body interface{}, headers map[string]string, result interface{}) error {
+	logger.Log.Debug().
+		Str("label", label).
+		Str("url", url).
+		Str("method", method).
+		Msg("Preparing HTTP request")
+
 	var reqBody io.Reader
 	if body != nil {
 		jsonData, err := json.Marshal(body)
