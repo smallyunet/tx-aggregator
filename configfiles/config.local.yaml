@@ -50,6 +50,8 @@ ankr:
     polygon_amoy: 80002
     base_sepolia: 84532
   request_page_size: 100   # Number of items per API request
+  include_logs: true
+  desc_order: true
 
 # ------------------------------
 # Blockscout API provider settings (multi-chain)
@@ -74,6 +76,10 @@ blockscan:
     api_key: QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR  # API key for BscScan
     chain_name: TestnetBSC
     request_page_size: 100
+    sort: desc
+    page: 1
+    startblock: 45000000
+    endblock: 9999999999
 
 # ------------------------------
 # Logging configuration

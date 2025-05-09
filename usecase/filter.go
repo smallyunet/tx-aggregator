@@ -109,9 +109,9 @@ func SortTransactionResponseByHeightAndIndex(resp *types.TransactionResponse, as
 }
 
 // LimitTransactions limits the number of transactions to a maximum count.
-func LimitTransactions(resp *types.TransactionResponse, max int) *types.TransactionResponse {
+func LimitTransactions(resp *types.TransactionResponse, max int64) *types.TransactionResponse {
 	txs := resp.Result.Transactions
-	if len(txs) > max {
+	if int64(len(txs)) > max {
 		resp.Result.Transactions = txs[:max]
 	}
 	return resp

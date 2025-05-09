@@ -38,6 +38,8 @@ type AnkrConfig struct {
 	URL             string           `mapstructure:"url"`
 	RequestPageSize int              `mapstructure:"request_page_size"`
 	ChainIDs        map[string]int64 `mapstructure:"chain_ids"`
+	IncludeLogs     bool             `mapstructure:"include_logs"`
+	DescOrder       bool             `mapstructure:"desc_order"`
 }
 
 // BlockscoutConfig represents a single Blockscout instance configuration.
@@ -59,8 +61,8 @@ type LogConfig struct {
 
 // ResponseConfig limits response size.
 type ResponseConfig struct {
-	Max       int  `mapstructure:"max"`
-	Ascending bool `mapstructure:"ascending"` // Default is false
+	Max       int64 `mapstructure:"max"`
+	Ascending bool  `mapstructure:"ascending"` // Default is false
 }
 
 // BlockscanConfig holds per-chain settings for BscScan / Etherscan style APIs.
@@ -68,5 +70,9 @@ type BlockscanConfig struct {
 	URL             string `mapstructure:"url"`               // e.g. https://api-testnet.bscscan.com/api
 	APIKey          string `mapstructure:"api_key"`           // personal API key
 	ChainName       string `mapstructure:"chain_name"`        // BSC, ETH, etc. – used in YAML mapping
-	RequestPageSize int    `mapstructure:"request_page_size"` // Max items per page (100 is typical)
+	RequestPageSize int64  `mapstructure:"request_page_size"` // Max items per page (100 is typical)
+	Sort            string `mapstructure:"sort"`              // asc or desc
+	Page            int64  `mapstructure:"page"`              // Page number
+	Startblock      int64  `mapstructure:"startblock"`        // Start block number
+	Endblock        int64  `mapstructure:"endblock"`          // End block number
 }

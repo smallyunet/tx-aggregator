@@ -6,5 +6,5 @@ consul:
 
 service:
   name: "tx-aggregator"
-  ip: "10.234.99.5"   # or leave empty and detect at runtime
+  ip: "127.0.0.1"     # or leave empty and detect at runtime
   port: 0             # 0 = use server.port from runtime config

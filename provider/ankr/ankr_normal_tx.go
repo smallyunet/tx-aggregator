@@ -34,8 +34,8 @@ func (p *AnkrProvider) GetTransactionsByAddress(params *types.TransactionQueryPa
 		Method:  "ankr_getTransactionsByAddress",
 		Params: map[string]interface{}{
 			"blockchain":  blockchains,
-			"includeLogs": true,
-			"descOrder":   true,
+			"includeLogs": config.Current().Ankr.IncludeLogs,
+			"descOrder":   config.Current().Ankr.DescOrder,
 			"pageSize":    config.Current().Ankr.RequestPageSize,
 			"address":     address,
 		},

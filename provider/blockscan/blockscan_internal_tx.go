@@ -3,6 +3,7 @@ package blockscan
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"tx-aggregator/types"
 	"tx-aggregator/utils"
@@ -13,11 +14,11 @@ func (p *BlockscanProvider) fetchInternalTx(addr string) (*types.BlockscanIntern
 		"module":     {"account"},
 		"action":     {"txlistinternal"},
 		"address":    {addr},
-		"startblock": {"45000000"},
-		"endblock":   {"9999999999"},
-		"page":       {"1"},
+		"startblock": {strconv.FormatInt(p.cfg.Startblock, 10)},
+		"endblock":   {strconv.FormatInt(p.cfg.Endblock, 10)},
+		"page":       {strconv.FormatInt(p.cfg.Page, 10)},
 		"offset":     {fmt.Sprint(p.cfg.RequestPageSize)},
-		"sort":       {"desc"},
+		"sort":       {p.cfg.Sort},
 		"apikey":     {p.cfg.APIKey},
 	}
 	var out types.BlockscanInternalTxResp

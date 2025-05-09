@@ -7,4 +7,4 @@ consul:
 service:
   name: "tx-aggregator"
   ip: "host.docker.internal"  # or leave empty and detect at runtime
-  port: 0             # 0 = use server.port from runtime config
+  port: 0                     # 0 = use server.port from runtime config

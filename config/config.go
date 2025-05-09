@@ -65,10 +65,6 @@ func Init(bootstrap *types.BootstrapConfig) {
 	   2. Default values (safest, lowest precedence)
 	---------------------------------------------------------------- */
 	viper.SetDefault("server.port", 8080)
-	viper.SetDefault("cache.ttl", 60)
-	viper.SetDefault("log.level", 1)
-	viper.SetDefault("response.max", 50)
-
 	_ = viper.BindEnv("server.port", "APP_PORT")
 
 	/* ────────────────────────────────────────────────────────────────
@@ -84,8 +80,7 @@ func Init(bootstrap *types.BootstrapConfig) {
 	/* ────────────────────────────────────────────────────────────────
 	   4. Load Consul KV  (highest precedence)
 	---------------------------------------------------------------- */
-	key := "config/tx-aggregator/" + env // KV path containing the YAML blob
-
+	key := fmt.Sprintf("config/%s/%s", bootstrap.Service.Name, env) // KV path containing the YAML blob
 	if consulAddr != "" {
 		if err := viper.AddRemoteProvider("consul", consulAddr, key); err != nil {
 			logger.Log.Fatal().Err(err).Msg("cannot register Consul remote provider")

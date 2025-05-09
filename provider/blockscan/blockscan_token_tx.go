@@ -3,6 +3,7 @@ package blockscan
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"tx-aggregator/types"
 	"tx-aggregator/utils"
@@ -13,9 +14,9 @@ func (p *BlockscanProvider) fetchTokenTx(addr string) (*types.BlockscanTokenTxRe
 		"module":  {"account"},
 		"action":  {"tokentx"},
 		"address": {addr},
-		"page":    {"1"},
+		"page":    {strconv.FormatInt(p.cfg.Page, 10)},
 		"offset":  {fmt.Sprint(p.cfg.RequestPageSize)},
-		"sort":    {"desc"},
+		"sort":    {p.cfg.Sort},
 		"apikey":  {p.cfg.APIKey},
 	}
 	var out types.BlockscanTokenTxResp
