@@ -4,8 +4,13 @@ package types
 // JSON response structs (minimal fields only)
 // -----------------------------------------------------------------------------
 
+const (
+	StatusError = "0"
+	StatusOK    = "1"
+)
+
 type BlockscanNormalTxResp struct {
-	Status  string            `json:"status"`
+	Status  string            `json:"status"` // 0 err, 1 ok
 	Message string            `json:"message"`
 	Result  []BlockscanTxItem `json:"result"`
 }

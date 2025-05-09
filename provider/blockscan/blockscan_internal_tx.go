@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"tx-aggregator/logger"
 	"tx-aggregator/types"
 	"tx-aggregator/utils"
 )
@@ -26,11 +27,20 @@ func (p *BlockscanProvider) fetchInternalTx(addr string) (*types.BlockscanIntern
 	if err := utils.DoHttpRequestWithLogging("GET", "blockscan.internalTx", u, nil, nil, &out); err != nil {
 		return nil, err
 	}
+
+	if out.Status == types.StatusError {
+		logger.Log.Warn().
+			Str("error_message", out.Message).
+			Str("address", addr).
+			Msg("Failed to fetch internal transactions from Blockscan")
+		return nil, fmt.Errorf("blockscan error: %s", out.Message)
+	}
+
 	return &out, nil
 }
 
 func (p *BlockscanProvider) transformInternalTx(resp *types.BlockscanInternalTxResp, addr string) []types.Transaction {
-	if resp == nil || resp.Status != "1" || len(resp.Result) == 0 {
+	if resp == nil || resp.Status != types.StatusOK || len(resp.Result) == 0 {
 		return nil
 	}
 
