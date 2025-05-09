@@ -12,7 +12,7 @@ server:
 # ------------------------------
 redis:
   addrs:        # List of Redis server addresses
-    - tantin-test-address-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com:6379
+    - tantin-test-wallet-tx-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com:6379
   password: ""  # Redis authentication password (empty for no password)
   ttl: 60       # Time-to-live for cached data in seconds
 

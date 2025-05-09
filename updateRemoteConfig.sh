@@ -26,9 +26,9 @@ curl http://10.234.10.222:8501/v1/kv/config/tx-aggregator/dev
 
 curl --request PUT \
   --data-binary @configfiles/config.test.yaml \
-  http://aaaa:8500/v1/kv/config/tx-aggregator/test
+  http://wallet-consul-test-internal.tantin.com/v1/kv/config/tx-aggregator/test
 
-curl http://aaaa:8500/v1/kv/config/tx-aggregator/test
+curl http://wallet-consul-test-internal.tantin.com/v1/kv/config/tx-aggregator/test
 
 
 ########################################
