@@ -43,9 +43,11 @@ var envFlag = flag.String("env", "local",
 
 // Only scheme / host(/port) / optional prefix differ between environments.
 var envHosts = map[string]string{
-	"local": "http://127.0.0.1:8080",
-	"test":  "http://nlb.devops.tantin.com:8000/api/tx-aggregator",
-	"prod":  "http://tx-aggregator.service.consul:8050",
+	"local":        "http://127.0.0.1:8080",
+	"local-docker": "http://127.0.0.1:8050",
+	"dev":          "http://nlb.devops.tantin.com:8000/api/tx-aggregator",
+	"test":         "http://aaa:8000/api/tx-aggregator",
+	"prod":         "http://tx-aggregator.service.consul:8050",
 }
 
 // ---------------------------------------------------------------------------

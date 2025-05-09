@@ -20,7 +20,7 @@ AIR := air
 # Application run‑time environment (dev / test / prod)
 # Passed to the Go program through the APP_ENV variable
 # ---------------------------------------------------------------------------
-APP_ENV ?= dev
+APP_ENV ?= local
 
 # ---------------------------------------------------------------------------
 # Integration‑test environment selector (local / test / prod / all)
