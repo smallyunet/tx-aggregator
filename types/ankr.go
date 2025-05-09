@@ -1,5 +1,10 @@
 package types
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // AnkrTransactionRequest represents the request structure for Ankr API transaction queries
 type AnkrTransactionRequest struct {
 	JSONRPC string                 `json:"jsonrpc"` // JSON-RPC version
@@ -15,6 +20,8 @@ type AnkrTransactionResponse struct {
 	Result  struct {
 		Transactions []AnkrTransaction `json:"transactions"` // List of transactions
 	} `json:"result"`
+	// Error is populated when the request fails.
+	Error *AnkrError `json:"error,omitempty"`
 }
 
 // AnkrTokenTransferResponse represents the response structure for Ankr API token transfer queries
@@ -25,6 +32,19 @@ type AnkrTokenTransferResponse struct {
 		NextPageToken string          `json:"nextPageToken"` // Token for pagination
 		Transfers     []TokenTransfer `json:"transfers"`     // List of token transfers
 	} `json:"result"`
+	// Error is populated when the request fails.
+	Error *AnkrError `json:"error,omitempty"`
+}
+
+// AnkrError represents the error object returned by the Ankr API.
+type AnkrError struct {
+	Code    int             `json:"code"`
+	Message string          `json:"message"`
+	Data    json.RawMessage `json:"data"` // or use a struct if you want to parse trace_id
+}
+
+func (e *AnkrError) Error() string {
+	return fmt.Sprintf("Ankr API error %d: %s", e.Code, e.Message)
 }
 
 // AnkrLogEntry represents a blockchain log entry from a transaction

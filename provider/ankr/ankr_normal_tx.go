@@ -55,6 +55,15 @@ func (p *AnkrProvider) GetTransactionsByAddress(params *types.TransactionQueryPa
 		return nil, err
 	}
 
+	if result.Error != nil {
+		logger.Log.Error().
+			Int("error_code", result.Error.Code).
+			Str("error_message", result.Error.Message).
+			Str("address", address).
+			Msg("Ankr API returned an error in normal transactions response")
+		return nil, result.Error // OK now, since it implements error
+	}
+
 	logger.Log.Debug().
 		Str("address", address).
 		Int("tx_count", len(result.Result.Transactions)).

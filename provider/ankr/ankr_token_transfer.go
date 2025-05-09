@@ -54,6 +54,15 @@ func (p *AnkrProvider) GetTokenTransfers(params *types.TransactionQueryParams) (
 		return nil, err
 	}
 
+	if result.Error != nil {
+		logger.Log.Error().
+			Int("error_code", result.Error.Code).
+			Str("error_message", result.Error.Message).
+			Str("address", address).
+			Msg("Ankr API returned an error in token transfer response")
+		return nil, result.Error // OK now, since it implements error
+	}
+
 	logger.Log.Debug().
 		Str("address", address).
 		Int("transfer_count", len(result.Result.Transfers)).
