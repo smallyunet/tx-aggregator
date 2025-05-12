@@ -22,8 +22,8 @@ var envFlag = flag.String("env", "local", "environment to run (value must exist 
 var envHosts = map[string]string{
 	"local":        "http://127.0.0.1:8080",
 	"local-docker": "http://127.0.0.1:8050",
-	"dev":          "http://nlb.devops.tantin.com:8000/api/tx-aggregator",
-	"test":         "http://aaa:8000/api/tx-aggregator",
+	"dev":          "http://tx-aggregator.service.consul:8050",
+	"test":         "http://tx-aggregator.service.consul:8050",
 	"prod":         "http://tx-aggregator.service.consul:8050",
 }
 
@@ -76,6 +76,9 @@ func runSuite(baseURL string, paths []string) bool {
 	base, _ := url.Parse(baseURL)
 	expectedCounts := loadExpectedCounts()
 	updatedCounts := make(map[string]int)
+	for k, v := range expectedCounts {
+		updatedCounts[k] = v
+	}
 
 	for idx, p := range paths {
 		fullURL := buildFullURL(base, p)
@@ -122,7 +125,12 @@ func runSuite(baseURL string, paths []string) bool {
 		passed++
 	}
 
-	saveExpectedCounts(updatedCounts)
+	if passed > 0 {
+		saveExpectedCounts(updatedCounts)
+	} else {
+		fmt.Println("No tests passed, will not update expected_counts.txt")
+	}
+
 	fmt.Printf("Summary: %d / %d passed\n", passed, len(paths))
 	return passed == len(paths)
 }

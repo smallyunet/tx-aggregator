@@ -4,7 +4,7 @@ services:
   app:
     build: .
     ports:
-      - "${APP_PORT}:8050"
+      - "${APP_PORT}:${APP_PORT}"
     environment:
       - APP_ENV=${APP_ENV}
       - APP_PORT=${APP_PORT}
@@ -22,7 +22,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
+        max-size: "1g"
         max-file: "5"
 
 
