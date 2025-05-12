@@ -132,7 +132,7 @@ func main() {
 
 	deregister, err := consul.Register(consulClient, types.Options{
 		Name:       bootstrapCfg.Service.Name,
-		ID:         fmt.Sprintf("%s-%d-%d", bootstrapCfg.Service.Name, serviceIP, port),
+		ID:         fmt.Sprintf("%s-%s-%d", bootstrapCfg.Service.Name, serviceIP, port),
 		Address:    serviceIP,
 		Port:       port,
 		HealthPath: "/health",
