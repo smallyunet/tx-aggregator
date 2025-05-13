@@ -43,7 +43,7 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		},
 		{
 			name:  "no chainName, use all chains",
-			query: "?address=0x0123456789abcdef0123456789abcdef01234567",
+			query: "?address=0x0123456789ABCDEF0123456789ABCDEF01234567",
 			expectedResult: &types.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "",
@@ -51,8 +51,8 @@ func TestParseTransactionQueryParams(t *testing.T) {
 			},
 		},
 		{
-			name:  "valid address and valid chain names",
-			query: "?address=0x0123456789abcdef0123456789abcdef01234567&chainName=eth,bsc",
+			name:  "valid address and valid chain names mixed case",
+			query: "?address=0x0123456789ABCDEF0123456789ABCDEF01234567&chainName=eth,bsc",
 			expectedResult: &types.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "",
@@ -80,7 +80,25 @@ func TestParseTransactionQueryParams(t *testing.T) {
 		},
 		{
 			name:  "valid token address ethereum",
-			query: "?address=0x0123456789abcdef0123456789abcdef01234567&tokenAddress=0x000000000000000000000000000000000000dead",
+			query: "?address=0x0123456789abcdef0123456789abcdef01234567&tokenAddress=0x000000000000000000000000000000000000DEAD",
+			expectedResult: &types.TransactionQueryParams{
+				Address:      "0x0123456789abcdef0123456789abcdef01234567",
+				TokenAddress: "0x000000000000000000000000000000000000dead",
+				ChainNames:   []string{"BSC", "ETH"}, // sorted
+			},
+		},
+		{
+			name:  "chainName with spaces and mixed case",
+			query: "?address=0x0123456789abcdef0123456789abcdef01234567&chainName=%20ETH%20,%20bsc%20",
+			expectedResult: &types.TransactionQueryParams{
+				Address:      "0x0123456789abcdef0123456789abcdef01234567",
+				TokenAddress: "",
+				ChainNames:   []string{"BSC", "ETH"}, // sorted
+			},
+		},
+		{
+			name:  "tokenAddress upper case, ensure lower",
+			query: "?address=0x0123456789abcdef0123456789abcdef01234567&tokenAddress=0X000000000000000000000000000000000000DEAD",
 			expectedResult: &types.TransactionQueryParams{
 				Address:      "0x0123456789abcdef0123456789abcdef01234567",
 				TokenAddress: "0x000000000000000000000000000000000000dead",

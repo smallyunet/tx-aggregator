@@ -1,12 +1,12 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
 	"tx-aggregator/types"
 
 	"github.com/gofiber/fiber/v2"
@@ -119,14 +119,83 @@ func TestGetTransactions_ServiceError(t *testing.T) {
 	assert.Equal(t, types.GetMessageByCode(types.CodeInternalError), body.Message)
 }
 
-// TestGetTransactions_Success tests successful retrieval from service.
-func TestGetTransactions_Success(t *testing.T) {
+// TestGetTransactions_TimeoutError tests when service returns context.DeadlineExceeded error.
+func TestGetTransactions_TimeoutError(t *testing.T) {
+	mockService := new(MockService)
+	app := setupTestApp(mockService)
+
+	paramsMatcher := mock.MatchedBy(func(p *types.TransactionQueryParams) bool {
+		return p != nil && strings.EqualFold(p.Address, validAddr)
+	})
+
+	mockService.On("GetTransactions", paramsMatcher).Return(nil, context.DeadlineExceeded)
+
+	req := httptest.NewRequest("GET", "/transactions?address="+validAddr+"&token_address="+validTokenAddr+"&chain_names=ethereum", nil)
+	resp, err := app.Test(req)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+	var body types.TransactionResponse
+	err = json.NewDecoder(resp.Body).Decode(&body)
+	assert.NoError(t, err)
+	assert.Equal(t, types.CodeProviderFailed, body.Code)
+	assert.Equal(t, "Request timed out", body.Message)
+}
+
+// TestGetTransactions_ServiceErrorWithResponse tests when service returns error and partial response.
+func TestGetTransactions_ServiceErrorWithResponse(t *testing.T) {
+	mockService := new(MockService)
+	app := setupTestApp(mockService)
+
+	expected := &types.TransactionResponse{
+		Code:    types.CodeProviderFailed,
+		Message: types.GetMessageByCode(types.CodeProviderFailed),
+	}
+
+	paramsMatcher := mock.MatchedBy(func(p *types.TransactionQueryParams) bool {
+		return p != nil && strings.EqualFold(p.Address, validAddr)
+	})
+
+	mockService.On("GetTransactions", paramsMatcher).Return(expected, errors.New("mock provider failure"))
+
+	req := httptest.NewRequest("GET", "/transactions?address="+validAddr+"&token_address="+validTokenAddr+"&chain_names=ethereum", nil)
+	resp, err := app.Test(req)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+	var body types.TransactionResponse
+	err = json.NewDecoder(resp.Body).Decode(&body)
+	assert.NoError(t, err)
+	assert.Equal(t, expected.Code, body.Code)
+	assert.Equal(t, expected.Message, body.Message)
+}
+
+// TestGetTransactions_SuccessWithTransactions tests successful response with transaction data.
+func TestGetTransactions_SuccessWithTransactions(t *testing.T) {
 	mockService := new(MockService)
 	app := setupTestApp(mockService)
 
 	expected := &types.TransactionResponse{
 		Code:    types.CodeSuccess,
 		Message: types.GetMessageByCode(types.CodeSuccess),
+	}
+	expected.Result.Transactions = []types.Transaction{
+		{
+			Hash:        "0xabc123",
+			FromAddress: validAddr,
+			ToAddress:   validTokenAddr,
+			Amount:      "1000",
+		},
+		{
+			Hash:        "0xdef456",
+			FromAddress: validAddr,
+			ToAddress:   validTokenAddr,
+			Amount:      "2000",
+		},
 	}
 
 	paramsMatcher := mock.MatchedBy(func(p *types.TransactionQueryParams) bool {
@@ -147,4 +216,7 @@ func TestGetTransactions_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected.Code, body.Code)
 	assert.Equal(t, expected.Message, body.Message)
+	assert.Len(t, body.Result.Transactions, 2)
+	assert.Equal(t, "0xabc123", body.Result.Transactions[0].Hash)
+	assert.Equal(t, "0xdef456", body.Result.Transactions[1].Hash)
 }
