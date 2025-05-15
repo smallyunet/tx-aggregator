@@ -1,5 +1,5 @@
 # BscScan Testnet API Queries
-# API Key: QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+# API Key: ****************
 
 # =========================
 # ✅ Basic Requests
@@ -15,7 +15,7 @@ https://api-testnet.bscscan.com/api
   &page=1
   &offset=10
   &sort=desc
-  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &apikey=****************
 
 # Internal Transactions (system-level calls)
 https://api-testnet.bscscan.com/api
@@ -27,7 +27,7 @@ https://api-testnet.bscscan.com/api
   &page=1
   &offset=100
   &sort=desc
-  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &apikey=****************
 
 # Token Transfers (ERC-20 etc.)
 https://api-testnet.bscscan.com/api
@@ -37,7 +37,7 @@ https://api-testnet.bscscan.com/api
   &page=1
   &offset=100
   &sort=desc
-  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &apikey=****************
 
 
 # =========================
@@ -54,7 +54,7 @@ https://api-testnet.bscscan.com/api
   &page=1
   &offset=10
   &sort=desc
-  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &apikey=****************
 
 # Token Transfers
 https://api-testnet.bscscan.com/api
@@ -64,7 +64,7 @@ https://api-testnet.bscscan.com/api
   &page=1
   &offset=100
   &sort=desc
-  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &apikey=****************
 
 # Internal Transactions
 https://api-testnet.bscscan.com/api
@@ -76,7 +76,7 @@ https://api-testnet.bscscan.com/api
   &page=1
   &offset=100
   &sort=desc
-  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &apikey=****************
 
 
 # =========================
@@ -87,11 +87,10 @@ https://api-testnet.bscscan.com/api
 https://api-testnet.bscscan.com/api
   ?action=txlistinternal
   &address=0x0000000000000000000000000000000000001004
-  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &apikey=****************
   &endblock=9999999999
   &module=account
   &offset=100
   &page=1
   &sort=desc
   &startblock=45000000
-

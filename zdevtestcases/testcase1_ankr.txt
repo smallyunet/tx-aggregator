@@ -7,7 +7,7 @@
 # 1. Request all chains for one address and measure total response time
 # ------------------------------------------------------------------------------
 
-curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+curl --location "https://rpc.ankr.com/multichain/****************" \
   --header 'Content-Type: application/json' \
   --data '{
       "id": 1,
@@ -28,7 +28,7 @@ curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a0805513
 # 2. Request a single chain (bsc) with full parameters
 # ------------------------------------------------------------------------------
 
-curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+curl --location "https://rpc.ankr.com/multichain/****************" \
   --header 'Content-Type: application/json' \
   --data '{
       "id": 1,
@@ -50,7 +50,7 @@ curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a0805513
 # 3. Request with testnet chains
 # ------------------------------------------------------------------------------
 
-curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+curl --location "https://rpc.ankr.com/multichain/****************" \
     --header 'Content-Type: application/json' \
     --data '{
         "id": 1,
@@ -65,7 +65,7 @@ curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a0805513
         }
     }' | jq
 
-curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+curl --location "https://rpc.ankr.com/multichain/****************" \
   --header 'Content-Type: application/json' \
   --data '{
       "id": 1,
@@ -79,4 +79,3 @@ curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a0805513
           "address": "0x76dba04a861e0fc98ef426a5d1ca62175a4b219d"
       }
   }' | jq
-

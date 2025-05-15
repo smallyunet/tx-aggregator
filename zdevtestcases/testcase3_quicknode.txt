@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # QuickNode RPC URLs per chain:
-# eth:     https://methodical-late-hill.quiknode.pro/880262ccbd4b8bf6ad76faccf464da6d14a5436e/
-# base:    https://morning-holy-lake.base-mainnet.quiknode.pro/bf1cddac51737ed2c6006d2b7f08a24f7774459c/
-# bsc:     https://quaint-fabled-frost.bsc.quiknode.pro/70dd52f6305160df422aa8614491192b9efecb2c/
-# polygon: https://restless-neat-aura.matic.quiknode.pro/28b4d15b7292ea042667f6711da09f143a2d3b75/
+# eth:     https://methodical-late-hill.quiknode.pro/****************/
+# base:    https://morning-holy-lake.base-mainnet.quiknode.pro/****************/
+# bsc:     https://quaint-fabled-frost.bsc.quiknode.pro/****************/
+# polygon: https://restless-neat-aura.matic.quiknode.pro/****************/
 
 ## ETH
 echo "🔍 Requesting ETH Mainnet transactions..."
-curl https://methodical-late-hill.quiknode.pro/880262ccbd4b8bf6ad76faccf464da6d14a5436e/ \
+curl https://methodical-late-hill.quiknode.pro/****************/ \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{
@@ -26,7 +26,7 @@ curl https://methodical-late-hill.quiknode.pro/880262ccbd4b8bf6ad76faccf464da6d1
 
 ## BASE
 echo "🔍 Requesting Base Mainnet transactions..."
-curl https://morning-holy-lake.base-mainnet.quiknode.pro/bf1cddac51737ed2c6006d2b7f08a24f7774459c/ \
+curl https://morning-holy-lake.base-mainnet.quiknode.pro/****************/ \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{
@@ -44,7 +44,7 @@ curl https://morning-holy-lake.base-mainnet.quiknode.pro/bf1cddac51737ed2c6006d2
 
 ## BSC
 echo "🔍 Requesting BSC Mainnet transactions..."
-curl https://quaint-fabled-frost.bsc.quiknode.pro/70dd52f6305160df422aa8614491192b9efecb2c/ \
+curl https://quaint-fabled-frost.bsc.quiknode.pro/****************/ \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{
@@ -62,7 +62,7 @@ curl https://quaint-fabled-frost.bsc.quiknode.pro/70dd52f6305160df422aa861449119
 
 ## POLYGON
 echo "🔍 Requesting Polygon Mainnet transactions..."
-curl https://restless-neat-aura.matic.quiknode.pro/28b4d15b7292ea042667f6711da09f143a2d3b75/ \
+curl https://restless-neat-aura.matic.quiknode.pro/****************/ \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{

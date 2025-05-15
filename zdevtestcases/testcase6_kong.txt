@@ -63,10 +63,9 @@ getent hosts tx-aggregator.service.consul
 
 # ---- test ----
 curl --location --request GET 'http://test-wallet-api.tantin.com/tantin/v4/wallet/tokenpartition/tokenlist?groupId=3&limitNum=1000' \
---header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' \
+--header 'Authorization: Basic ****************' \
 --header 'language: en'
 
 curl --location --request GET 'http://tantin-api.service.consul:9090/v4/wallet/tokenpartition/tokenlist?groupId=3&limitNum=1000' \
---header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' --header 'language: en'
-
+--header 'Authorization: Basic ****************' --header 'language: en'
 

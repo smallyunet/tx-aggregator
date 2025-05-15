@@ -20,7 +20,137 @@ redis:
 # Data provider configuration
 # ------------------------------
 providers:
+  request_timeout: 60  # Timeout for external provider requests (in se# config.yaml
+# Version: v1.4.7
+
+# ------------------------------
+# Server configuration
+# ------------------------------
+server:
+  port: 8080  # Port number for the application server
+
+# ------------------------------
+# Redis configuration (single-node or cluster)
+# ------------------------------
+redis:
+  addrs:        # List of Redis server addresses
+    - ****************.ttckps.ng.0001.apse1.cache.amazonaws.com:6379
+  password: ""  # Redis authentication password (empty for no password)
+  ttl: 60       # Time-to-live for cached data in seconds
+
+# ------------------------------
+# Data provider configuration
+# ------------------------------
+providers:
   request_timeout: 60  # Timeout for external provider requests (in seconds)
+  chain_providers:     # Mapping of chain names to their data provider
+    ETH: ankr
+    BSC: ankr
+    POL: ankr
+    BASE: ankr
+    TTX: blockscout_ttx
+    HoleskyETH: ankr
+    SepoliaETH: ankr
+    AmoyPOL: ankr
+    BaseSepoliaETH: ankr
+    TestnetBSC: blockscan_testnetbsc
+    TestnetTTX: blockscout_testnetttx
+
+# ------------------------------
+# Ankr API provider settings
+# ------------------------------
+ankr:
+  api_key: ****************  # API key for BscScan
+  url: https://rpc.ankr.com/multichain  # Ankr's unified multichain RPC endpoint
+  chain_ids:               # Mapping of Ankr chain names to their numeric chain IDs
+    eth: 1
+    bsc: 56
+    polygon: 137
+    base : 8453
+    eth_holesky: 17000
+    eth_sepolia: 11155111
+    polygon_amoy: 80002
+    base_sepolia: 84532
+  request_page_size: 100   # Number of items per API request
+  include_logs: true
+  desc_order: true
+
+# ------------------------------
+# Blockscout API provider settings (multi-chain)
+# ------------------------------
+blockscout:
+  - url: https://api.tantin.com/api/v2       # API URL for mainnet TTX
+    chain_name: TTX                           # Logical chain name used in code/config
+    request_page_size: 100
+    rpc_url: https://rpc.tantin.com          # RPC node URL for on-chain queries
+    rpc_request_timeout: 90                  # Timeout for RPC calls in seconds
+  - url: http://testscan.tantin.com/api/v2   # API URL for testnet TTX
+    chain_name: TestnetTTX
+    request_page_size: 100
+    rpc_url: https://testrpc.tantin.com
+    rpc_request_timeout: 90
+
+# ------------------------------
+# Blockscan API provider settings (for BSC Testnet)
+# ------------------------------
+blockscan:
+  - url: https://api-testnet.bscscan.com/api
+    api_key: QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR  # API key for BscScan
+    chain_name: TestnetBSC
+    request_page_size: 100
+    sort: desc
+    page: 1
+    startblock: 45000000
+    endblock: 9999999999
+
+# ------------------------------
+# Logging configuration
+# ------------------------------
+log:
+  level: 0               # Log level (0: DEBUG, 1: INFO, 2: WARN, 3: ERROR)
+  path: ./logs           # Directory where log files are saved
+  console_format: text   # Format for console output (text or json)
+  file_format: json      # Format for file logs (text or json)
+
+# ------------------------------
+# API response behavior
+# ------------------------------
+response:
+  max: 50         # Maximum number of items allowed in a response
+  ascending: false  # Whether to sort the response in ascending order
+
+# ------------------------------
+# Chain ID mappings for reference and normalization
+# ------------------------------
+chain_names:
+  ETH: 1
+  BSC: 56
+  POL: 137
+  BASE: 8453
+  TTX: 12301
+  HoleskyETH: 17000
+  SepoliaETH: 11155111
+  AmoyPOL: 80002
+  BaseSepoliaETH: 84532
+  TestnetBSC: 97
+  TestnetTTX: 12302
+
+# ------------------------------
+# Native token symbols per chain ID
+# ------------------------------
+native_tokens:
+  "1": ETH
+  "56": BNB
+  "137": POL
+  "8453": ETH
+  "12301": CTC
+  "17000": HoleskyETH
+  "11155111": SepoliaETH
+  "80002": POL
+  "84532": ETH
+  "97": BNB
+  "12302": CTC
+conds)
   chain_providers:     # Mapping of chain names to their data provider
     ETH: ankr
     BSC: ankr

@@ -6,7 +6,7 @@ docker run -d --name consul-dev \
   agent -dev -client=0.0.0.0
 
 
-# 测试 consul 注册
+# Test consul registration
 curl --request PUT http://wallet-consul-internal.tantin.com:8500/v1/agent/service/register \
   --header "Content-Type: application/json" \
   --data '{

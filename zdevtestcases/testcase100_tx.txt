@@ -1,30 +1,17 @@
-
-
-
 curl http://127.0.0.1:8050/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
 curl http://tx-aggregator.service.consul:8050/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
 
-
-
 # ====== local env =====
-redis-cli -h http://tantin-dev-wallet-tx-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
+redis-cli -h http://****************.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
 KEYS *
 
 # ====== test env =====
-redis-cli -h tantin-test-wallet-tx-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
+redis-cli -h ****************.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
 KEYS *
 
 # ====== prod env =====
-redis-cli -h tantin-prd-wallet-tx-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
+redis-cli -h ****************.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
 KEYS *
 
-
-
-
-
-
-
-redis-cli -h tantin-test-wallet-add-valkey.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
+redis-cli -h ****************.ttckps.ng.0001.apse1.cache.amazonaws.com -p 6379
 KEYS *
-
-

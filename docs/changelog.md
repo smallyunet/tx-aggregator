@@ -1,129 +1,128 @@
+## Deployment Versions
 
-## 部署版本
-
-- 本地环境：v1.5.6
-- 开发环境：v1.5.2
-- 测试环境：v1.5.2
-- 生产环境：v1.5.5
+- Local environment: v1.5.6
+- Development environment: v1.5.2
+- Testing environment: v1.5.2
+- Production environment: v1.5.5
 
 ## Changelogs
 
 v1.5.
-1. 修复单元测试文件，增加注释
-2. 重命名 /api/ 下的文件，没有逻辑变动
+1. Fixed unit test files, added comments
+2. Renamed files under /api/, no logic changes
 
 v1.5.5:
-1. 修复 consul id 的类型问题
+1. Fixed type issues with consul ID
 
 v1.5.4:
-1. 修复注册到 consol 上的 id 的名字
+1. Fixed the name of the ID registered on consul
 
 v1.5.3:
-1. 修复 prod 环境配置的问题，主要是端口不能用一样的
+1. Fixed configuration issues in prod environment, mainly that ports cannot be the same
 
 v1.5.2:
-1. 适配 dev 环境的配置文件
-2. 统一部署全部环境到这个版本
+1. Adapted configuration files for dev environment
+2. Standardized deployment of all environments to this version
 
-v1.5.1：
-1. 主要改动部署脚本，多个环境用相同的 docker-compose，只用 env 文件区分
+v1.5.1:
+1. Major changes to deployment scripts; multiple environments use the same docker-compose, differentiated only by env files
 
-v1.5.0 版本主要改动：
-1. 新增测试环境配置文件以及部署脚本
+v1.5.0:
+1. Added test environment configuration files and deployment scripts
 
-v1.4.8 版本主要改动：
-1. 新增 5 条测试链的支持，新增 block scan 的支持
-2. 日志可以配置格式 text/json
-3. 修复交易排序的问题
+v1.4.8:
+1. Added support for 5 test chains and block scan support
+2. Logs can be configured in text/json format
+3. Fixed transaction sorting issues
 
-v1.4.7 版本主要改动：
-1. 新增对测试环境和生产环境的集成测试（主要测试缓存一致性）
-2. 修复 remote config 引起的单元测试失败的问题
-3. Native 交易给定一个默认的、主币名称
+v1.4.7:
+1. Added integration tests for test and production environments (mainly testing cache consistency)
+2. Fixed unit test failures caused by remote config
+3. Assigned default native coin name for Native transactions
 
-v1.4.6 版本主要改动：
-1. 修复docker 日志路径的问题
+v1.4.6:
+1. Fixed docker log path issues
 
-v1.4.5 版本主要改动：
-1. 加入生产环境需要的配置文件
-2. 修复实时读取consul远程配置的功能
+v1.4.5:
+1. Added configuration files required for production environment
+2. Fixed real-time reading of consul remote configuration
 
-v1.4.0-v1.4.4 版本的主要改动：
-1. 程序会写入日志到文件，默认在 .logs 目录
-2. 增加集成测试（对外部无关）
+v1.4.0-v1.4.4:
+1. Application writes logs to files, defaulting to the .logs directory
+2. Added integration tests (no external impact)
 
-v1.4.0 版本主要改动：
-1. 去掉冗余影子交易过滤代码
-2. Redis 切换 valkey
+v1.4.0:
+1. Removed redundant shadow transaction filtering code
+2. Switched Redis to valkey
 
-v1.3.5 版本的主要改动：
-1. 修复影子交易的问题
+v1.3.5:
+1. Fixed shadow transaction issues
 
-v1.3.4 版本主要改动：
-1. 请求ankr token交易的时候没有倒序
+v1.3.4:
+1. Fixed issue where ankr token transactions weren't in reverse order
 
-v1.3.3 版本主要改动：
-1. 交易排序的问题，改为倒序
-2. 过滤掉影子交易的问题
+v1.3.3:
+1. Fixed transaction sorting issues, changed to descending order
+2. Resolved issues with filtering out shadow transactions
 
-v1.3.2 版本主要改动：
-1. Type 字段去掉 -1 的取值，默认是0，approve是1
+v1.3.2:
+1. Removed -1 as a value from the Type field; default is 0, approve is 1
 
-v1.3.1 版本主要改动：
-1. 用上了 consul 的配置中心，如果不存在则 fallback 到本地配置文件
-2. 修复了单元测试
+v1.3.1:
+1. Implemented consul configuration center, falling back to local config files if not available
+2. Fixed unit tests
 
-v1.3.0 版本主要改动：
-1. 注册服务到 consul上，后续将通过 kong 网关来访问
+v1.3.0:
+1. Registered service to consul; future access will be through the kong gateway
 
-v1.2.7 版本主要变动：
-1. 修复 ankr 工具函数过滤的问题，发请求
+v1.2.7:
+1. Fixed filtering issues in ankr utility functions when sending requests
 
-v1.2.6 版本的主要变动：
-1. provider按照链区分，ankr的请求参数按照链区分，ankr 的请求参数改为 100，提高速度
-2. 修复 token 过滤的逻辑，有 tokan address就只返回 coinType=2
+v1.2.6:
+1. Differentiated providers by chain; ankr request parameters now differentiated by chain; ankr request parameter changed to 100 for improved speed
+2. Fixed token filtering logic: when token address is provided, only returns coinType=2
 
-v1.2.4 版本的主要改动：
-1. 对外没有影响，内部代码重构、加单元测试等
+v1.2.4:
+1. No external impact; internal code refactoring, additional unit tests, etc.
 
-v1.2.3 版本的主要改动：
-1. 新增 balance 字段。balance 字段表示没有处理精度的，amount 字段表示处理过精度的。
+v1.2.3:
+1. Added balance field. The balance field represents values without precision handling, while the amount field represents values with precision handling.
 
-v1.2.2 版本的主要改动：
-1. 返回的 amount 是除以 decimels 之后的值
+v1.2.2:
+1. The returned amount is the value after division by decimals
 
-v1.2.1 版本的主要改动：
-1. 再次修复 500 的问题
+v1.2.1:
+1. Fixed 500 error issues again
 
-v1.2.0 版本主要改动：
-1. 超时错误返回状态码改为 200，而不是 500。因为已经有业务级别的错误码
+v1.2.0:
+1. Changed timeout error response code to 200 instead of 500, as business-level error codes are already in place
 
-v1.1.8 版本主要改动：
-1. 修改超时时间为 90 s
+v1.1.8:
+1. Changed timeout duration to 90 seconds
 
-v1.1.6 版本主要改动：
-1. 代码做了重构，对外部不应该产生影响
+v1.1.6:
+1. Code refactoring, should not affect external functionality
 
-v1.1.5 版本主要改动：
-1. 规范 state 字段，1 成功，0失败
+v1.1.5:
+1. Standardized the state field: 1 for success, 0 for failure
 
-v1.1.4 版本主要改动：
-1. 优化响应速度，大幅减少 redis 操作的耗时
+v1.1.4:
+1. Optimized response speed, significantly reducing time spent on Redis operations
 
-v1.1.3 版本主要改动：
-1. 外部接口没有感知
-2. Cache key 用 chain name 而不是 chain id
+v1.1.3:
+1. No impact on external interfaces
+2. Cache keys now use chain name instead of chain ID
 
-v1.1.2 版本主要改动
-1. 新增 serverChainName 字段
-2. chainName 参数不区分大小写，tokenAddress 参数不区分大小写
+v1.1.2:
+1. Added serverChainName field
+2. chainName and tokenAddress parameters are now case-insensitive
 
-v1.1.1 版本的主要改动
-1. 用 tx type = 2 来表示内部交易，而不是 tx type = -2
+v1.1.1:
+1. Using tx type = 2 to represent internal transactions, rather than tx type = -2
 
-V1.1.0 版本的接口的主要改动有：
-1. 新增 tokenAddress=native 参数，只查询native 交易
-2. Token trnasfer 交易包含 gas limit 、gas usefd 等参数
+v1.1.0:
+1. Added tokenAddress=native parameter to query only native transactions
+2. Token transfer transactions now include parameters such as gas limit, gas used, etc.
 
-v1.0.2 版本的接口变动：
-1. Gas limit, gas price 等用 string 而不是 int
+v1.0.2:
+1. Gas limit, gas price, etc. now use string type instead of int
