@@ -1,0 +1,72 @@
+# ========================================
+# 🧭 DNS Lookup - Check if Consul is Resolving the Service
+# ========================================
+
+# Use a temporary BusyBox container to resolve the service name via Consul DNS (port 8600)
+docker run --rm --network host busybox \
+    nslookup -port=8600 tx-aggregator.service.consul 10.234.202.202
+
+# Use dig to query SRV and A records
+dig @10.234.202.202 -p 8600 tx-aggregator.service.consul SRV  # Query SRV record via Consul DNS
+dig @10.234.202.202 -p 53   tx-aggregator.service.consul SRV  # Query SRV via default DNS port
+dig @10.234.202.202 -p 53   tx-aggregator.service.consul A    # Query A record
+
+# ========================================
+# 🚪 Register Kong Service and Route
+# ========================================
+
+# Register a new service in Kong pointing to Consul-resolved address
+curl -X POST http://localhost:8001/services \
+     -d name=tx-aggregator-svc \
+     -d url=http://tx-aggregator.service.consul
+
+# Create a route for the service with a path prefix
+curl -X POST http://localhost:8001/services/tx-aggregator-svc/routes \
+     -d name=tx-aggregator-route \
+     -d paths[]=/api/tx-aggregator
+
+# ========================================
+# 🧪 Test Direct and Proxy Requests
+# ========================================
+
+# Direct requests to tx-aggregator instances (bypassing Kong)
+curl http://10.234.88.21:8050/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
+curl http://10.234.88.20:8050/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
+
+# Requests through Kong (local)
+curl http://localhost:8000/api/tx-aggregator
+curl http://localhost:8000/api/tx-aggregator/health
+curl http://localhost:8000/api/tx-aggregator/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
+
+# Requests through Kong (production)
+curl https://wallet-api.tantin.com/api/tx-aggregator/health
+curl https://wallet-api.tantin.com/api/tx-aggregator/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D
+
+# Direct service access using Consul DNS name
+curl "http://tx-aggregator.service.consul:8050/transactions?address=0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D"
+
+# ========================================
+# 🧵 Check DNS Resolution from Inside Kong Container
+# ========================================
+
+# Access Kong container (replace with your actual container ID)
+docker exec -it 431a9b868f54 sh
+
+# Inside container: test DNS resolution
+nslookup tx-aggregator.service.consul
+getent hosts tx-aggregator.service.consul
+
+# ========================================
+# 🗃️ Inspect Redis Data
+# ========================================
+
+
+# ---- test ----
+curl --location --request GET 'http://test-wallet-api.tantin.com/tantin/v4/wallet/tokenpartition/tokenlist?groupId=3&limitNum=1000' \
+--header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' \
+--header 'language: en'
+
+curl --location --request GET 'http://tantin-api.service.consul:9090/v4/wallet/tokenpartition/tokenlist?groupId=3&limitNum=1000' \
+--header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' --header 'language: en'
+
+

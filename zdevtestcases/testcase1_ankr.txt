@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Script: benchmark_ankr_requests.sh
+# Description: Test Ankr MultiChain API response time with different parameters.
+
+# ------------------------------------------------------------------------------
+# 1. Request all chains for one address and measure total response time
+# ------------------------------------------------------------------------------
+
+curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "id": 1,
+      "jsonrpc": "2.0",
+      "method": "ankr_getTransactionsByAddress",
+      "params": {
+          "blockchain": ["bsc", "eth", "polygon", "base"],
+          "includeLogs": true,
+          "descOrder": true,
+          "pageSize": 1000,
+          "address": "0x912EF7D073b0f81dFcBa5A09Ff3BcEC515BF0c75"
+      }
+  }' \
+  --silent --output /dev/null \
+  --write-out "Total time (all chains): %{time_total}s\n"
+
+# ------------------------------------------------------------------------------
+# 2. Request a single chain (bsc) with full parameters
+# ------------------------------------------------------------------------------
+
+curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "id": 1,
+      "jsonrpc": "2.0",
+      "method": "ankr_getTransactionsByAddress",
+      "params": {
+          "blockchain": "bsc",
+          "includeLogs": true,
+          "descOrder": true,
+          "pageSize": 100,
+          "address": "0xb6cEF76BD998f157434d93A791603D38c6e41f85"
+      }
+  }' \
+  --silent --output /dev/null \
+  --write-out "Total time (BSC full): %{time_total}s\n"
+
+
+# ------------------------------------------------------------------------------
+# 3. Request with testnet chains
+# ------------------------------------------------------------------------------
+
+curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+    --header 'Content-Type: application/json' \
+    --data '{
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "ankr_getTransactionsByAddress",
+        "params": {
+            "blockchain": ["base","base_sepolia","bsc","eth","eth_holesky","eth_sepolia","polygon","polygon_amoy"],
+            "includeLogs": true,
+            "descOrder": true,
+            "pageSize": 100,
+            "address": "0x76dba04a861e0fc98ef426a5d1ca62175a4b219d"
+        }
+    }' | jq
+
+curl --location "https://rpc.ankr.com/multichain/15d9d6561619144cc7f0681a08055130110513f4d6f5bef0c1919af78c9f6a65" \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "id": 1,
+      "jsonrpc": "2.0",
+      "method": "ankr_getTokenTransfers",
+      "params": {
+          "blockchain": ["base","base_sepolia","bsc","eth","eth_holesky","eth_sepolia","polygon","polygon_amoy"],
+          "includeLogs": true,
+          "descOrder": true,
+          "pageSize": 100,
+          "address": "0x76dba04a861e0fc98ef426a5d1ca62175a4b219d"
+      }
+  }' | jq
+

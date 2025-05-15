@@ -1,0 +1,69 @@
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.2.8.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.2.8.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.2.9.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.2.9.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.3.0.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.3.0.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.3.1.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.3.1.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.3.2.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.3.2.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.3.3.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.3.3.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.3.4.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.3.4.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.3.5.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.3.5.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.3.6.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.3.6.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.0.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.0.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.1.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.1.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.2.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.2.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.3.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.3.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.4.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.4.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.5.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.5.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.6.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.6.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-release-v1.4.7.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-release-v1.4.7.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-v1.5.0.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-v1.5.0.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-v1.5.1.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-v1.5.1.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-v1.5.2.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-v1.5.2.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-v1.5.3.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-v1.5.3.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-v1.5.4.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-v1.5.4.tar.gz
+
+curl -F "file=@/Users/smallyu/Downloads/tantin_transaction_api-v1.5.5.tar.gz" http://10.234.99.68:8888/upload
+wget http://10.234.99.68:8888/download/tantin_transaction_api-v1.5.5.tar.gz

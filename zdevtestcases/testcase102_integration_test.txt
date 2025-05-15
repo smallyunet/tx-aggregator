@@ -1,0 +1,10 @@
+
+
+TEST_ENV=local make integration-test
+TEST_ENV=local-docker make integration-test
+TEST_ENV=dev make integration-test
+TEST_ENV=test make integration-test
+TEST_ENV=prod make integration-test
+
+
+

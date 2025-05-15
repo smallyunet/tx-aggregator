@@ -1,0 +1,97 @@
+# BscScan Testnet API Queries
+# API Key: QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+
+# =========================
+# ✅ Basic Requests
+# =========================
+
+# Normal Transactions
+https://api-testnet.bscscan.com/api
+  ?module=account
+  &action=txlist
+  &address=0x1a73C6c04bBc0aD52cd079B657553EaA30A26e61
+  &startblock=0
+  &endblock=99999999
+  &page=1
+  &offset=10
+  &sort=desc
+  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+
+# Internal Transactions (system-level calls)
+https://api-testnet.bscscan.com/api
+  ?module=account
+  &action=txlistinternal
+  &address=0x0000000000000000000000000000000000001004
+  &startblock=0
+  &endblock=2702578
+  &page=1
+  &offset=100
+  &sort=desc
+  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+
+# Token Transfers (ERC-20 etc.)
+https://api-testnet.bscscan.com/api
+  ?module=account
+  &action=tokentx
+  &address=0x0c82922944350ffe0ec8ad1f08995ae0eed10e75
+  &page=1
+  &offset=100
+  &sort=desc
+  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+
+
+# =========================
+# 🔍 Debug (Same Address for Comparison)
+# =========================
+
+# Normal Transactions
+https://api-testnet.bscscan.com/api
+  ?module=account
+  &action=txlist
+  &address=0x1a73C6c04bBc0aD52cd079B657553EaA30A26e61
+  &startblock=0
+  &endblock=99999999
+  &page=1
+  &offset=10
+  &sort=desc
+  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+
+# Token Transfers
+https://api-testnet.bscscan.com/api
+  ?module=account
+  &action=tokentx
+  &address=0x1a73C6c04bBc0aD52cd079B657553EaA30A26e61
+  &page=1
+  &offset=100
+  &sort=desc
+  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+
+# Internal Transactions
+https://api-testnet.bscscan.com/api
+  ?module=account
+  &action=txlistinternal
+  &address=0x1a73C6c04bBc0aD52cd079B657553EaA30A26e61
+  &startblock=0
+  &endblock=99999999
+  &page=1
+  &offset=100
+  &sort=desc
+  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+
+
+# =========================
+# ⏱ Internal Tx Benchmark (startblock comparison)
+# =========================
+
+# Startblock = 45000000
+https://api-testnet.bscscan.com/api
+  ?action=txlistinternal
+  &address=0x0000000000000000000000000000000000001004
+  &apikey=QW27JK8B2N7W4UME127Y2RW2PZF4CMDWJR
+  &endblock=9999999999
+  &module=account
+  &offset=100
+  &page=1
+  &sort=desc
+  &startblock=45000000
+

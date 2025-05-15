@@ -1,0 +1,30 @@
+
+docker run -d --name consul-dev \
+  -p 8500:8500 \
+  -p 8600:8600/udp \
+  hashicorp/consul:latest \
+  agent -dev -client=0.0.0.0
+
+
+# 测试 consul 注册
+curl --request PUT http://wallet-consul-internal.tantin.com:8500/v1/agent/service/register \
+  --header "Content-Type: application/json" \
+  --data '{
+    "ID": "test-service-1",
+    "Name": "test-service",
+    "Tags": ["test"],
+    "Port": 12345,
+    "Address": "127.0.0.1",
+    "Check": {
+      "HTTP": "http://127.0.0.1:12345/health",
+      "Interval": "10s",
+      "Timeout": "1s",
+      "DeregisterCriticalServiceAfter": "1m"
+    }
+  }'
+
+curl --request PUT http://wallet-consul-internal.tantin.com:8500/v1/agent/service/deregister/test-service-1
+curl -X PUT http://10.234.202.202:8500/v1/agent/service/deregister/tx-aggregator-8080
+
+
+curl --request PUT https://wallet-consul-devops.tantin.com/v1/agent/service/deregister/tx-aggregator-%!d(string=10.234.88.20)-8050

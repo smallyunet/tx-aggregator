@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# QuickNode RPC URLs per chain:
+# eth:     https://methodical-late-hill.quiknode.pro/880262ccbd4b8bf6ad76faccf464da6d14a5436e/
+# base:    https://morning-holy-lake.base-mainnet.quiknode.pro/bf1cddac51737ed2c6006d2b7f08a24f7774459c/
+# bsc:     https://quaint-fabled-frost.bsc.quiknode.pro/70dd52f6305160df422aa8614491192b9efecb2c/
+# polygon: https://restless-neat-aura.matic.quiknode.pro/28b4d15b7292ea042667f6711da09f143a2d3b75/
+
+## ETH
+echo "🔍 Requesting ETH Mainnet transactions..."
+curl https://methodical-late-hill.quiknode.pro/880262ccbd4b8bf6ad76faccf464da6d14a5436e/ \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{
+    "id": 67,
+    "jsonrpc": "2.0",
+    "method": "qn_getTransactionsByAddress",
+    "params": [{
+      "address": "0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D",
+      "page": 1,
+      "perPage": 10
+    }]
+  }' \
+  --silent --output /dev/null \
+  --write-out "Total time (ETH): %{time_total}s\n"
+
+## BASE
+echo "🔍 Requesting Base Mainnet transactions..."
+curl https://morning-holy-lake.base-mainnet.quiknode.pro/bf1cddac51737ed2c6006d2b7f08a24f7774459c/ \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{
+    "id": 67,
+    "jsonrpc": "2.0",
+    "method": "qn_getTransactionsByAddress",
+    "params": [{
+      "address": "0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D",
+      "page": 1,
+      "perPage": 10
+    }]
+  }' \
+  --silent --output /dev/null \
+  --write-out "Total time (BASE): %{time_total}s\n"
+
+## BSC
+echo "🔍 Requesting BSC Mainnet transactions..."
+curl https://quaint-fabled-frost.bsc.quiknode.pro/70dd52f6305160df422aa8614491192b9efecb2c/ \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{
+    "id": 67,
+    "jsonrpc": "2.0",
+    "method": "qn_getTransactionsByAddress",
+    "params": [{
+      "address": "0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D",
+      "page": 1,
+      "perPage": 10
+    }]
+  }' \
+  --silent --output /dev/null \
+  --write-out "Total time (BSC): %{time_total}s\n"
+
+## POLYGON
+echo "🔍 Requesting Polygon Mainnet transactions..."
+curl https://restless-neat-aura.matic.quiknode.pro/28b4d15b7292ea042667f6711da09f143a2d3b75/ \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{
+    "id": 67,
+    "jsonrpc": "2.0",
+    "method": "qn_getTransactionsByAddress",
+    "params": [{
+      "address": "0x76Dba04a861E0fc98EF426A5d1CA62175A4B219D",
+      "page": 1,
+      "perPage": 10
+    }]
+  }' \
+  --silent --output /dev/null \
+  --write-out "Total time (POLYGON): %{time_total}s\n"

@@ -170,7 +170,7 @@ coverage.out
 ehthumbs.db
 Thumbs.db
 
-testcase*.txt
+# testcase*.txt
 logs/
 /tx-aggregator
 !/cmd/tx-aggregator

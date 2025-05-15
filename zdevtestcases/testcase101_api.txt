@@ -1,0 +1,45 @@
+#########################################
+# DEV ENVIRONMENT
+#########################################
+curl --location 'https://dev-wallet-api.tantin.com/tantin/v4/wallet/transaction/loadTransactionList' \
+  --header 'versioncode: 7' \
+  --header 'Content-Type: application/json' \
+  --header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' \
+  --data '{
+    "address": "0x42fADa639eA626214adE4a88aaC445FDBCA4FACD",
+    "tokenType": 1,
+    "tokenAddress": "0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4",
+    "chainId": 2
+}'
+
+#########################################
+# TEST ENVIRONMENT - PUBLIC TEST DOMAIN
+#########################################
+curl --location 'https://test-wallet-api.tantin.com/tantin/v4/wallet/transaction/loadTransactionList' \
+  --header 'versioncode: 7' \
+  --header 'Content-Type: application/json' \
+  --header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' \
+  --data '{
+    "address": "0xa7a55997B5A6110b5c9F095cCF52f821Fae35d17",
+    "tokenType": 1,
+    "tokenAddress": "native",
+    "chainId": 11155111
+}'
+
+curl --location --request GET 'https://test-wallet-api.tantin.com/tantin/v4/wallet/tokenpartition/tokenlist?groupId=3&limitNum=1000' \
+  --header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' \
+  --header 'language: en'
+
+#########################################
+# PROD ENVIRONMENT
+#########################################
+curl --location 'https://wallet-api.tantin.com/tantin/v4/wallet/transaction/loadTransactionList' \
+  --header 'versioncode: 7' \
+  --header 'Content-Type: application/json' \
+  --header 'Authorization: Basic YmVhcmVyOnlvdXdhbGxldA==' \
+  --data '{
+    "address": "0x42fADa639eA626214adE4a88aaC445FDBCA4FACD",
+    "tokenType": 1,
+    "tokenAddress": "0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4",
+    "chainId": 2
+}'
