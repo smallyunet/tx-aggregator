@@ -30,8 +30,8 @@ Tx Aggregator is a blockchain transaction data aggregation service that collects
 
 1. Clone the repository
 ```bash
-git clone git@gitlab.devops.tantin.com:walletbackend/tantin_transaction_api.git
-cd tantin_transaction_api
+git clone https://github.com/smallyunet/tx-aggregator
+cd tx-aggregator
 ```
 
 2. Run the service
