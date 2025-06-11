@@ -1,58 +1,81 @@
 # Tx Aggregator
 
-Tx Aggregator is a blockchain transaction data aggregation service that collects, processes, and provides cross-chain transaction data. The service supports multiple blockchain networks and offers a unified API interface for querying transaction information.
+Tx Aggregator is a Go service that aggregates blockchain transactions from multiple data sources. It normalises
+provider‑specific data into a single format, caches the result in Redis and exposes a simple HTTP API for queries.
 
-## Key Features
+The service is designed to run in different environments (local, dev, test, prod) and uses Consul for both service
+registration and configuration. Logging is handled by [zerolog](https://github.com/rs/zerolog).
 
-- Multi-chain transaction data aggregation (ETH, BSC, etc.)
-- Unified transaction query API
-- Support for native tokens and ERC20/BEP20 token transactions
-- Built-in Redis caching mechanism for improved query performance
-- Transaction filtering and pagination
-- Detailed transaction information including status, gas fees, etc.
+## Features
 
-## Tech Stack
+- **Multi‑chain support** – fetches transactions from Ethereum, BSC, Polygon and other chains defined in the config.
+- **Pluggable providers** – built‑in connectors for Ankr, Blockscout, Blockscan and QuickNode. Each chain can be routed
+to a different provider.
+- **Redis cache** – transactions are grouped by address/chain/token and cached for faster repeated queries.
+- **Consul integration** – runtime configuration and service registration are performed via Consul; settings are hot‑reloaded.
+- **Unified API** – a single `/transactions` endpoint returns native and ERC‑20/BEP‑20 transfers with gas details.
+- **Graceful shutdown** – the process deregisters from Consul and exits cleanly on SIGINT/SIGTERM.
 
-- Go programming language
-- Fiber web framework
-- Redis caching
-- Ankr API integration
+## Directory overview
 
-## Quick Start
+```
+tx-aggregator/
+├── api/            # HTTP handlers and parameter parsing
+├── cache/          # Redis helpers and transaction caching logic
+├── cmd/            # Main applications (service and integration tests)
+├── config/         # Runtime configuration loader
+├── configfiles/    # Example bootstrap/config YAML files
+├── consul/         # Consul bootstrap loader and service registrar
+├── provider/       # Provider implementations (ankr, blockscout, ...)
+├── router/         # Route definitions for Fiber
+├── types/          # Shared type definitions
+└── usecase/        # Business logic (filtering, sorting, etc.)
+```
 
-### Prerequisites
+## Configuration
 
-- Go 1.16+
-- Redis
-- Ankr API Key
+Startup uses two YAML files:
 
-### Installation
+1. **Bootstrap** (`bootstrap.<env>.yaml`) – Consul address, service name and port.
+2. **Runtime config** (`config/<service>/<env>`) – loaded from Consul KV (with optional local override). It defines
+   Redis settings, provider mappings and other behaviour. A sample is located under `configfiles/`.
 
-1. Clone the repository
+Configuration is hot‑reloaded every 10 seconds. Environment is selected via the `APP_ENV` variable.
+
+## Running
+
+Install dependencies and start the service in development mode:
+
 ```bash
-git clone https://github.com/smallyunet/tx-aggregator
-cd tx-aggregator
+make dev               # hot‑reload with Air (APP_ENV=local)
 ```
 
-2. Run the service
+To run once without hot‑reload:
+
 ```bash
-make dev
+make run APP_ENV=dev
 ```
 
-## API Usage
+The service listens on the port defined in the runtime configuration (default `8080`).
 
-### Get Transaction List
+## API
+
+### `GET /transactions`
+
+Query parameters:
+
+- `address` – wallet address (required)
+- `chainName` – comma‑separated list of chain names (optional; defaults to all supported chains)
+- `tokenAddress` – token contract address or `native` (optional)
+
+Example:
 
 ```
-GET /transactions?address=<wallet_address>&chainName=<chain_name>&tokenAddress=<token_address>
+GET /transactions?address=0x123...&chainName=ETH,BSC&tokenAddress=native
 ```
 
-Parameters:
-- `address`: Wallet address (required)
-- `chainName`: Chain name(s), comma-separated (optional, defaults to all supported chains)
-- `tokenAddress`: Token contract address (optional, for filtering specific token transactions)
+The response body always has HTTP status `200`. Application errors are reported via the `code` field.
 
-Example Response:
 ```json
 {
   "code": 0,
@@ -61,18 +84,13 @@ Example Response:
     "transactions": [
       {
         "chainId": 1,
-        "tokenId": 0,
-        "state": 1,
-        "height": 12345678,
         "hash": "0x...",
         "fromAddress": "0x...",
         "toAddress": "0x...",
         "amount": "1000000000000000000",
         "gasUsed": "21000",
         "gasPrice": "20000000000",
-        "type": 0,
         "coinType": 1,
-        "createdTime": 1234567890,
         "tranType": 0
       }
     ]
@@ -80,28 +98,18 @@ Example Response:
 }
 ```
 
-## Project Structure
+Transactions are sorted by block height and limited to the `response.max` value from the configuration.
 
-```
-tx-aggregator/
-├── api/            # API handlers
-├── cache/          # Cache implementation
-├── config/         # Configuration management
-├── logger/         # Logging
-├── model/          # Data models
-├── provider/       # Data providers
-├── router/         # Route definitions
-├── types/          # Type definitions
-└── usecase/        # Business logic
+## Testing
+
+Unit tests can be run with:
+
+```bash
+go test ./...
 ```
 
-## Contributing
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+An integration test tool is available under `cmd/tx-aggregator-integration`. It compares API responses across
+environments and checks transaction counts.
 
 ## License
 
